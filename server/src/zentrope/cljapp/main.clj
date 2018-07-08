@@ -31,8 +31,11 @@
     (:op cmd)))
 
 (defmethod repl-op :default [_ cmd]
-  (println "Unknown repl-op" (pr-str cmd))
+  (println " - unknown op" (pr-str cmd))
   {:error :unknown-op :command cmd})
+
+(defmethod repl-op "ping" [repl _]
+  {:op :ping :data :pong})
 
 (defmethod repl-op "eval" [repl cmd]
   (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
@@ -60,8 +63,8 @@
 
 (defn- repl [req repl]
   (let [cmd (json/read-str (body-of req) :key-fn keyword)
+        _ (println " -" (pr-str cmd))
         result (repl-op repl cmd)]
-    (println " -" (pr-str cmd))
     (jresp result)))
 
 (defn- not-found [r]

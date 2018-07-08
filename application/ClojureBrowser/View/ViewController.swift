@@ -92,7 +92,7 @@ class ViewController: NSViewController {
         let prefs = Prefs()
         let site = prefs.replUrl
 
-        Net.sendTo(site: site, form: expr) { error, text in
+        Net.sendForEval(site: site, form: expr) { error, text in
             if let e = error {
                 self.appendParagraph("error : \(e.localizedDescription) - \(site)")
                 return

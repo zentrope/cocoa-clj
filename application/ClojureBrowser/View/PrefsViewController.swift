@@ -94,12 +94,12 @@ class PrefsViewController: NSViewController {
     @IBAction func testButtonClicked(_ sender: NSButton) {
         testSetup()
         let url = collect().replUrl
-        Net.testConnection(with: url) { valid, errorText in
-            if valid {
+        Net.testConnection(with: url) { error, reason in
+            guard let e = error else {
                 self.testSuccess()
-            } else {
-                self.testFailure(reason: errorText)
+                return
             }
+            self.testFailure(reason: e.localizedDescription)
         }
     }
 }
