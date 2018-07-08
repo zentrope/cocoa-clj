@@ -64,8 +64,8 @@ struct Net {
         }
 
         var request = URLRequest(url: url)
-        request.addValue("text/plain", forHTTPHeaderField: "content-type")
-        request.httpBody = form.data(using: .utf8)
+        request.addValue("application/json", forHTTPHeaderField: "content-type")
+        request.httpBody = Repl.mkEval(expr: form).data(using: .utf8)
         request.httpMethod = "POST"
 
         let task = session.dataTask(with: request) { data, response, error in
@@ -86,36 +86,4 @@ struct Net {
         task.resume()
     }
 
-    // MARK: - Legacy
-
-    static func testUrl(with site: String, _ completion: @escaping (Error?, String?) -> Void) {
-
-        let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
-
-        guard let connUrl = URL(string: site) else {
-            Log.error("invalid URL \(site)")
-            return
-        }
-
-        let task = session.dataTask(with: connUrl) { data, response, error in
-            defer {
-                session.finishTasksAndInvalidate()
-            }
-            if let e = error {
-                Log.error("- error: \(e.localizedDescription) - \(site)")
-                DispatchQueue.main.async {
-                    completion(e, nil)
-                }
-                return
-            }
-
-            if let body = data, let text = String(data: body, encoding: .utf8) {
-                DispatchQueue.main.async {
-                    completion(nil, text)
-                }
-            }
-        }
-
-        task.resume()
-    }
 }

@@ -50,7 +50,7 @@ struct Summary {
     }
 }
 
-struct NreplResponse: Codable {
+struct NreplResponse : Codable {
 
     enum DecodingKeys : String {
         case rootEx = "root-ex"
