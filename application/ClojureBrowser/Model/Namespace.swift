@@ -25,29 +25,59 @@ struct Namespace {
             return [CLJNameSpace]()
         }
     }
+
+    static func decodeSymbols(jsonString: String) -> [CLJSymbol] {
+        let jsonData = jsonString.data(using: .utf8)!
+        let decoder = JSONDecoder()
+
+        do {
+            let namespaces = try decoder.decode([CLJSymbol].self, from: jsonData)
+            return namespaces
+        }
+
+        catch let error {
+            Log.error("data \(jsonString)")
+            Log.error(error.localizedDescription)
+            return [CLJSymbol]()
+        }
+    }
 }
 
-struct CLJNameSpace : Codable {
-    var ns: String
-    var symbols: [CLJSymbol]
+class CLJNameSpace : Codable {
+    // Has to be a class if used in NSOutlineView
+    var name: String
 }
 
 struct CLJSymbol : Codable {
 
-    enum DecodingKeys : String {
-        case isPrivate = "private"
-        case isMacro = "macro"
-    }
-
     var name: String
     var ns: String
+
     var line: Int?
     var column: Int?
     var file: String?
-    var isPrivate: Bool?
-    var isMacro: Bool?
     var doc: String?
     var added: String?
+    var deprecated: String?
 
-    // TODO: arglists
+    var isPrivate: Bool?
+    var isMacro: Bool?
+    var isStatic: Bool?
+    var isDynamic: Bool?
+
+    enum CodingKeys : String, CodingKey {
+        case name
+        case ns
+
+        case line
+        case column
+        case file
+        case doc
+        case deprecated
+
+        case isPrivate = "private"
+        case isMacro = "macro"
+        case isStatic = "static"
+        case isDynamic = "dynamic"
+    }
 }

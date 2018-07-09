@@ -15,11 +15,15 @@ struct Repl {
     }
 
     static func mkPing() -> String {
-        return encode(op: ReplOp(op: .ping, expr: nil))
+        return encode(op: ReplOp(op: .ping))
     }
 
     static func mkGetNameSpaces() -> String {
-        return encode(op: ReplOp(op: .nss, expr: nil))
+        return encode(op: ReplOp(op: .nss))
+    }
+
+    static func mkGetSymbols(inNs ns: String) -> String {
+        return encode(op: ReplOp(op: .ns, name: ns))
     }
 
     static func encode(op: ReplOp) -> String {
@@ -39,6 +43,21 @@ enum Operation: String, Codable {
 
 struct ReplOp : Codable {
 
+    init(op: Operation) {
+        self.op = op
+    }
+
+    init(op: Operation, expr: String) {
+        self.op = op
+        self.expr = expr
+    }
+
+    init(op: Operation, name: String) {
+        self.op = op
+        self.name = name
+    }
+
     var op: Operation
     var expr: String?
+    var name: String?
 }

@@ -26,7 +26,7 @@
 
 ;;; Repl Client Handlers
 
-(defmulti repl-op
+(defmulti ^:private repl-op
   (fn [repl cmd]
     (:op cmd)))
 
@@ -42,14 +42,22 @@
     (doall (repl/message (:client repl) msg))))
 
 (defmethod repl-op "nss" [repl _]
-  (->> (all-ns) (mapv (memfn getName)) sort (mapv #(hash-map :ns % :symbols []))))
+  (->> (all-ns) (mapv (memfn getName)) sort (mapv #(hash-map :name %))))
+
+(def ^:private reasonable
+  [:ns :name
+   :file :column :line                  ; location
+   :dynamic :private :macro             ; bools
+   :deprecated])                        ; interesting
 
 (defmethod repl-op "ns" [repl cmd]
   (->> (symbol (:name cmd))
        ns-interns
        vals
        (mapv meta)
-       (mapv #(assoc % :ns (.getName (:ns %))))))
+       (mapv #(assoc % :ns (.getName (:ns %))))
+       (mapv #(select-keys % reasonable))
+       (sort-by :name)))
 
 ;;; Web Handlers
 
@@ -64,9 +72,10 @@
 
 (defn- jresp
   [value]
-  {:status 200
-   :headers {"content-type" "application/json"}
-   :body (json/write-str value)})
+  (let [doc (json/write-str value)]
+    {:status 200
+     :headers {"content-type" "application/json"}
+     :body doc}))
 
 (defn- ping [r]
   (tresp "OK"))
@@ -94,7 +103,7 @@
 
 ;;; Configuration
 
-(def config
+(def ^:private config
   {:nrepl-server {:port 61016}
    :nrepl-client {:port 61016 :server (ig/ref :nrepl-server)}
    :httpd {:port 60006 :repl (ig/ref :nrepl-client)}})

@@ -14,7 +14,7 @@
 		53B5366120F1EC2100661A23 /* Nrepl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53B5366020F1EC2100661A23 /* Nrepl.swift */; };
 		53F233B120F2A12F00891128 /* Repl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B020F2A12F00891128 /* Repl.swift */; };
 		53F233B320F2E4E200891128 /* Namespace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B220F2E4E200891128 /* Namespace.swift */; };
-		53F233B520F2EE0100891128 /* SidebarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B420F2EE0100891128 /* SidebarController.swift */; };
+		53F233B720F2FE3A00891128 /* SidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B620F2FE3A00891128 /* SidebarViewController.swift */; };
 		53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722CE20F12D6200E0BBDC /* Prefs.swift */; };
 		53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D220F130F900E0BBDC /* PrefsViewController.swift */; };
 		53F722D720F13C4700E0BBDC /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D620F13C4700E0BBDC /* Log.swift */; };
@@ -34,7 +34,7 @@
 		53B5366020F1EC2100661A23 /* Nrepl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nrepl.swift; sourceTree = "<group>"; };
 		53F233B020F2A12F00891128 /* Repl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repl.swift; sourceTree = "<group>"; };
 		53F233B220F2E4E200891128 /* Namespace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Namespace.swift; sourceTree = "<group>"; };
-		53F233B420F2EE0100891128 /* SidebarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarController.swift; sourceTree = "<group>"; };
+		53F233B620F2FE3A00891128 /* SidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarViewController.swift; sourceTree = "<group>"; };
 		53F722CE20F12D6200E0BBDC /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		53F722D220F130F900E0BBDC /* PrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
 		53F722D620F13C4700E0BBDC /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
@@ -99,7 +99,7 @@
 			children = (
 				5374A89520EB28770083CC15 /* MainViewController.swift */,
 				53F722D220F130F900E0BBDC /* PrefsViewController.swift */,
-				53F233B420F2EE0100891128 /* SidebarController.swift */,
+				53F233B620F2FE3A00891128 /* SidebarViewController.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -213,10 +213,10 @@
 				5374A89620EB28770083CC15 /* MainViewController.swift in Sources */,
 				53F722DA20F17A3900E0BBDC /* Net.swift in Sources */,
 				53F233B120F2A12F00891128 /* Repl.swift in Sources */,
-				53F233B520F2EE0100891128 /* SidebarController.swift in Sources */,
 				5374A89420EB28770083CC15 /* AppDelegate.swift in Sources */,
 				53F722DE20F1A24B00E0BBDC /* TextView.swift in Sources */,
 				53F722D720F13C4700E0BBDC /* Log.swift in Sources */,
+				53F233B720F2FE3A00891128 /* SidebarViewController.swift in Sources */,
 				53F722DC20F1A1E600E0BBDC /* String.swift in Sources */,
 				53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */,
 				53F233B320F2E4E200891128 /* Namespace.swift in Sources */,

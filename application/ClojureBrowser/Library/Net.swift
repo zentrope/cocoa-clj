@@ -27,6 +27,10 @@ struct Net {
         invokeRequest(to: site, withBody: Repl.mkGetNameSpaces(), completion)
     }
 
+    static func getSymbols(from: String, inNamespace ns: String, _ completion: @escaping completionHandler) {
+        invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns), completion)
+    }
+
     // MARK: - Implementation and Convenience
 
     private static func invokeRequest(to siteUrl: String, withBody payload: String, _ completion: completionHandler?) {

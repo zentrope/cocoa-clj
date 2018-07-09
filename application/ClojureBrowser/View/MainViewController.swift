@@ -65,23 +65,6 @@ class MainViewController: NSViewController {
 
     // MARK: - Action Handlers
 
-    @IBAction func refreshButtonClick(_ sender: Any) {
-        Log.info("Test getting namespaces from server.")
-        Net.getNameSpaces(site: Prefs().replUrl) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-            }
-
-            if let t = text {
-                let nss = Namespace.decodeNameSpace(jsonString: t)
-                for ns in nss {
-                    Log.info("\(ns)")
-                }
-                self.appendParagraph(t.tighten())
-            }
-        }
-    }
-
     @IBAction func onUserInput(_ sender: NSTextField) {
         let s = sender.stringValue.trimmingCharacters(in: CharacterSet.whitespaces)
 

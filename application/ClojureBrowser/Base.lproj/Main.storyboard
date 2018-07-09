@@ -904,11 +904,8 @@ Gw
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
                         <rect key="contentRect" x="425" y="450" width="480" height="281"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
-                        <toolbar key="toolbar" implicitIdentifier="11CEAAD5-1CC6-4C09-A05D-3B0EC8590137" autosavesConfiguration="NO" displayMode="iconAndLabel" sizeMode="regular" id="FYG-5J-ud3">
+                        <toolbar key="toolbar" implicitIdentifier="11CEAAD5-1CC6-4C09-A05D-3B0EC8590137" autosavesConfiguration="NO" allowsUserCustomization="NO" displayMode="iconOnly" sizeMode="regular" id="FYG-5J-ud3">
                             <allowedToolbarItems>
-                                <toolbarItem implicitItemIdentifier="NSToolbarShowColorsItem" id="B6e-83-aie"/>
-                                <toolbarItem implicitItemIdentifier="NSToolbarShowFontsItem" id="Clm-ap-n3k"/>
-                                <toolbarItem implicitItemIdentifier="NSToolbarPrintItem" id="VM9-Su-yHY"/>
                                 <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="Qjb-5O-c74"/>
                                 <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="2nw-Zi-9eV"/>
                                 <toolbarItem implicitItemIdentifier="188A00AD-7076-4D84-9447-885603065980" label="Refresh" paletteLabel="Refresh" image="NSRefreshTemplate" sizingBehavior="auto" id="AC6-5J-2eK">
@@ -920,9 +917,12 @@ Gw
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
+                                        <connections>
+                                            <action selector="refreshNamespaceButtonClick:" target="qpQ-1L-epN" id="XGq-0i-qwW"/>
+                                        </connections>
                                     </button>
                                     <connections>
-                                        <action selector="refreshButtonClick:" target="qpQ-1L-epN" id="LNR-6r-xUA"/>
+                                        <action selector="refreshButtonClick:" target="qpQ-1L-epN" id="Bgj-1I-ZrY"/>
                                     </connections>
                                 </toolbarItem>
                             </allowedToolbarItems>
@@ -968,10 +968,10 @@ Gw
             </objects>
             <point key="canvasLocation" x="32" y="533"/>
         </scene>
-        <!--View Controller-->
+        <!--Sidebar View Controller-->
         <scene sceneID="nwt-9Y-36X">
             <objects>
-                <viewController id="Yyz-BI-Uth" sceneMemberID="viewController">
+                <viewController id="Yyz-BI-Uth" customClass="SidebarViewController" customModule="ClojureBrowser" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="MpW-7X-Fxt">
                         <rect key="frame" x="0.0" y="0.0" width="150" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -982,7 +982,7 @@ Gw
                                     <rect key="frame" x="0.0" y="0.0" width="150" height="300"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" multipleSelection="NO" autosaveColumns="NO" rowHeight="24" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" outlineTableColumn="FfC-5d-YJE" id="U4H-Fc-fIE">
+                                        <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" multipleSelection="NO" autosaveColumns="NO" rowHeight="24" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="2" outlineTableColumn="FfC-5d-YJE" id="U4H-Fc-fIE">
                                             <rect key="frame" x="0.0" y="0.0" width="150" height="300"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
@@ -995,7 +995,7 @@ Gw
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
-                                                    <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" title="Text Cell" id="UaV-bO-mAB">
+                                                    <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" identifier="TextCell" title="Text Cell" id="UaV-bO-mAB">
                                                         <font key="font" metaFont="system"/>
                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1008,9 +1008,9 @@ Gw
                                                             <subviews>
                                                                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lwr-Zc-YLi">
                                                                     <rect key="frame" x="0.0" y="1" width="147" height="14"/>
-                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="HEADER CELL" id="VGY-Wl-PbM">
+                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="header" id="VGY-Wl-PbM">
                                                                         <font key="font" metaFont="smallSystemBold"/>
-                                                                        <color key="textColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
@@ -1033,11 +1033,11 @@ Gw
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" constant="17" id="3lU-6U-pV2"/>
                                                                     </constraints>
-                                                                    <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" image="NSActionTemplate" id="8jp-JP-5Lm"/>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" id="8jp-JP-5Lm"/>
                                                                 </imageView>
                                                                 <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dzi-Bu-R8o">
                                                                     <rect key="frame" x="25" y="0.0" width="122" height="17"/>
-                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="LTc-ar-5MI">
+                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" identifier="TextCell" title="Table View Cell" id="LTc-ar-5MI">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1060,6 +1060,10 @@ Gw
                                                     </prototypeCellViews>
                                                 </tableColumn>
                                             </tableColumns>
+                                            <connections>
+                                                <outlet property="dataSource" destination="Yyz-BI-Uth" id="spB-dS-FQl"/>
+                                                <outlet property="delegate" destination="Yyz-BI-Uth" id="eet-FV-SGp"/>
+                                            </connections>
                                         </outlineView>
                                     </subviews>
                                     <nil key="backgroundColor"/>
@@ -1081,6 +1085,9 @@ Gw
                             <constraint firstAttribute="bottom" secondItem="7ed-cv-pOh" secondAttribute="bottom" id="yU3-53-PDF"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="outlineView" destination="U4H-Fc-fIE" id="xbO-IE-dkr"/>
+                    </connections>
                 </viewController>
                 <customObject id="Gs1-Dh-Qao" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1107,7 +1114,7 @@ Gw
                                                     <rect key="frame" x="0.0" y="0.0" width="546" height="430"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                    <size key="minSize" width="562" height="430"/>
+                                                    <size key="minSize" width="546" height="430"/>
                                                     <size key="maxSize" width="562" height="10000000"/>
                                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                 </textView>
@@ -1169,7 +1176,6 @@ Gw
         </scene>
     </scenes>
     <resources>
-        <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSRefreshTemplate" width="11" height="15"/>
     </resources>
 </document>
