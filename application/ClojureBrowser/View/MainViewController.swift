@@ -8,12 +8,13 @@
 
 import Cocoa
 
-class ViewController: NSViewController {
+class MainViewController: NSViewController {
 
     // MARK: - Outlets
 
+    @IBOutlet var outputView: NSTextView!
     @IBOutlet weak var userInputTextField: NSTextField!
-    @IBOutlet weak var outputView: NSTextView!
+
 
     // MARK: - Instance data
 
@@ -64,13 +65,7 @@ class ViewController: NSViewController {
 
     // MARK: - Action Handlers
 
-    @IBAction func toolbarButtonClick(_ sender: Any) {
-        clearBuffer()
-    }
-
-    // This isn't really useful because the connection isn't going to be
-    // stateful -- more of a place to try side-effect code.
-    @IBAction func connectButtonClick(_ sender: Any) {
+    @IBAction func refreshButtonClick(_ sender: Any) {
         Log.info("Test getting namespaces from server.")
         Net.getNameSpaces(site: Prefs().replUrl) { error, text in
             if let e = error {
@@ -89,6 +84,7 @@ class ViewController: NSViewController {
 
     @IBAction func onUserInput(_ sender: NSTextField) {
         let s = sender.stringValue.trimmingCharacters(in: CharacterSet.whitespaces)
+
 
         if (s.count > 0) {
             Log.info("Sending form '\(s)' to buffer.")
