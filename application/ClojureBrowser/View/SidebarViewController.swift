@@ -24,11 +24,20 @@ class SidebarViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // TODO: This shouldn't happen here, but the refresh button won't hook up
+        let name = Notification.Name("refresh")
+        let center = NotificationCenter.default
+        center.addObserver(self, selector: #selector(self.refresh), name: name, object: nil)
+
+        // It's OK if this fails
+        loadNamespaces()
+    }
+
+    @objc func refresh(notification: NSNotification) {
         loadNamespaces()
     }
 
     private func loadNamespaces() {
+        Log.info("refreshing namespaces")
         Net.getNameSpaces(site: Prefs().replUrl) { error, text in
             if let e = error {
                 Log.error(e.localizedDescription)
@@ -74,7 +83,7 @@ class SidebarViewController: NSViewController {
 
     // MARK: - Actions
     
-    @IBAction public func refreshNamespaceButtonClick(_ sender: NSToolbarItem) {
+    func refreshNamespaceButtonClick(_ sender: NSToolbarItem) {
         Log.info("REFRESHING NAMESPACES")
         loadNamespaces()
     }
