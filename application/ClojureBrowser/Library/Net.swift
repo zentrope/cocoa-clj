@@ -23,6 +23,10 @@ struct Net {
         invokeRequest(to: site, withBody: Repl.mkEval(expr: form), completion)
     }
 
+    static func getNameSpaces(site: String, _ completion: @escaping completionHandler) {
+        invokeRequest(to: site, withBody: Repl.mkGetNameSpaces(), completion)
+    }
+
     // MARK: - Implementation and Convenience
 
     private static func invokeRequest(to siteUrl: String, withBody payload: String, _ completion: completionHandler?) {

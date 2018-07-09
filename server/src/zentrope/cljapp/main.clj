@@ -41,6 +41,16 @@
   (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
     (doall (repl/message (:client repl) msg))))
 
+(defmethod repl-op "nss" [repl _]
+  (->> (all-ns) (mapv (memfn getName)) sort (mapv #(hash-map :ns % :symbols []))))
+
+(defmethod repl-op "ns" [repl cmd]
+  (->> (symbol (:name cmd))
+       ns-interns
+       vals
+       (mapv meta)
+       (mapv #(assoc % :ns (.getName (:ns %))))))
+
 ;;; Web Handlers
 
 (defn- body-of

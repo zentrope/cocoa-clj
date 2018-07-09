@@ -18,6 +18,10 @@ struct Repl {
         return encode(op: ReplOp(op: .ping, expr: nil))
     }
 
+    static func mkGetNameSpaces() -> String {
+        return encode(op: ReplOp(op: .nss, expr: nil))
+    }
+
     static func encode(op: ReplOp) -> String {
         let encoder = JSONEncoder()
         let data = try! encoder.encode(op)
@@ -28,8 +32,8 @@ struct Repl {
 enum Operation: String, Codable {
     case ping = "ping"
     case eval = "eval"
-    case allNS = "all-ns"
-    case setNS = "set-ns"
+    case nss = "nss" // Get a list of namespaces
+    case ns = "ns"   // Get the symbols in a namespace
     case source = "source"
 }
 

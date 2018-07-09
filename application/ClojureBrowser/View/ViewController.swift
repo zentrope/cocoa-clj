@@ -71,7 +71,20 @@ class ViewController: NSViewController {
     // This isn't really useful because the connection isn't going to be
     // stateful -- more of a place to try side-effect code.
     @IBAction func connectButtonClick(_ sender: Any) {
-        Log.info("Nothing doing.")
+        Log.info("Test getting namespaces from server.")
+        Net.getNameSpaces(site: Prefs().replUrl) { error, text in
+            if let e = error {
+                Log.error(e.localizedDescription)
+            }
+
+            if let t = text {
+                let nss = Namespace.decodeNameSpace(jsonString: t)
+                for ns in nss {
+                    Log.info("\(ns)")
+                }
+                self.appendParagraph(t.tighten())
+            }
+        }
     }
 
     @IBAction func onUserInput(_ sender: NSTextField) {
