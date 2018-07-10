@@ -30,6 +30,7 @@ extension NSTextView {
         let prefix = storage.string.count > 0 ? "\n" : ""
         storage.mutableString.append(prefix + line)
         storage.font = font
+        storage.foregroundColor = NSColor.textColor
         let range = self.attributedString().length
 
         storage.addAttribute(.paragraphStyle, value: style, range: NSMakeRange(0, range))
