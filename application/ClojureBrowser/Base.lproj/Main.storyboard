@@ -1079,7 +1079,7 @@ Gw
                                     <stackView distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hfi-GU-8DE">
                                         <rect key="frame" x="0.0" y="0.0" width="61" height="46"/>
                                         <subviews>
-                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8Wd-oV-oyj">
+                                            <button toolTip="Refetch image data" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8Wd-oV-oyj">
                                                 <rect key="frame" x="10" y="11" width="11" height="25"/>
                                                 <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="NSRefreshTemplate" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" state="on" inset="2" id="dSj-pF-xzM">
                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1089,7 +1089,7 @@ Gw
                                                     <action selector="refreshButtonClicked:" target="Yyz-BI-Uth" id="h1J-Qx-iKa"/>
                                                 </connections>
                                             </button>
-                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eUI-cq-tAm">
+                                            <button toolTip="Hide private vars" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eUI-cq-tAm">
                                                 <rect key="frame" x="29" y="13" width="22" height="19"/>
                                                 <buttonCell key="cell" type="recessed" title="P" bezelStyle="recessed" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="C7g-pr-5Vr">
                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>

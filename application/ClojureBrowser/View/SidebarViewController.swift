@@ -176,19 +176,22 @@ extension SidebarViewController: NSOutlineViewDelegate {
 
         if let sym = item as? CLJSymbol {
 
-            let identifier = NSUserInterfaceItemIdentifier(rawValue: "DataCell")
+            if sym.isPrivate ?? false {
+                let identifier = NSUserInterfaceItemIdentifier(rawValue: "DataCell")
 
-            view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
-
-            if let imageThing = view?.imageView {
-                if sym.isPrivate ?? false {
+                view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
+                if let imageThing = view?.imageView {
                     imageThing.image = NSImage(named: NSImage.lockLockedTemplateName)
                     imageThing.sizeToFit()
-                } else {
-                    imageThing.image = nil
                 }
-            }
 
+            } else {
+
+                let identifier = NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
+
+                view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
+
+            }
             if let textField = view?.textField {
                 textField.stringValue = sym.name
                 textField.sizeToFit()
