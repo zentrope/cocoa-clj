@@ -24,7 +24,7 @@ class SidebarViewController: NSViewController {
     var filter = ""
     var showOnlyPublic = false
 
-    // MARK: - View controller
+    // MARK: - Controller
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -121,11 +121,29 @@ class SidebarViewController: NSViewController {
         showOnlyPublic = !showOnlyPublic
         outlineView.reloadData()
     }
+
+    @IBAction func doubleClicked(_ sender: NSOutlineView) {
+        let item = sender.item(atRow: sender.clickedRow)
+        if let sym = item as? CLJSymbol {
+            let ref = "\(sym.ns)/\(sym.name)"
+            Net.getSource(from: Prefs().replUrl, forSymbol: ref) { error, text in
+                if let e = error {
+                    Log.error(e.localizedDescription)
+                    return
+                }
+
+                if let t = text {
+                    let source = Namespace.decodeSource(jsonString: t)
+                    Notify.aboutSource(source: source, forSymbol: sym)
+                }
+            }
+        }
+    }
 }
 
 extension SidebarViewController: NSOutlineViewDataSource {
 
-    // MARK: - Outline dataource delegate
+    // MARK: - Outline datasource delegate
 
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
 
@@ -171,6 +189,8 @@ extension SidebarViewController: NSOutlineViewDelegate {
     }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+
+        // TODO: Revise all this with better cell layouts
 
         var view: NSTableCellView?
 

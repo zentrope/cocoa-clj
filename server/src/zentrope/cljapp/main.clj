@@ -19,6 +19,7 @@
 (ns zentrope.cljapp.main
   (:require
    [clojure.data.json :as json]
+   [clojure.repl :refer [source-fn]]
    [integrant.core :as ig]
    [nrepl.server :refer [start-server stop-server]]
    [nrepl.core :as repl]
@@ -34,15 +35,19 @@
   (println " - unknown op" (pr-str cmd))
   {:error :unknown-op :command cmd})
 
-(defmethod repl-op "ping" [repl _]
-  {:op :ping :data :pong})
-
 (defmethod repl-op "eval" [repl cmd]
   (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
     (doall (repl/message (:client repl) msg))))
 
 (defmethod repl-op "nss" [repl _]
   (->> (all-ns) (mapv (memfn getName)) sort (mapv #(hash-map :name %))))
+
+(defmethod repl-op "ping" [repl _]
+  {:op :ping :data :pong})
+
+(defmethod repl-op "source" [repl cmd]
+  {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
+               (format "Source for '%s' not found." (:symbol cmd)))})
 
 (def ^:private reasonable
   [:ns :name

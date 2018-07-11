@@ -19,11 +19,12 @@ class MainViewController: NSViewController {
     // MARK: - Instance data
 
     let paragraphSpacing = CGFloat(13.0 * 1.5)
-    let defaultFont = NSFont.userFixedPitchFont(ofSize: 13.0)
+    let defaultFont = NSFont.userFixedPitchFont(ofSize: 11.0)
 
     lazy var defaultStyle: NSMutableParagraphStyle = {
         let s = NSMutableParagraphStyle()
         s.paragraphSpacing = paragraphSpacing
+        s.lineBreakMode = NSLineBreakMode.byTruncatingTail
         return s
     }()
 
@@ -34,6 +35,16 @@ class MainViewController: NSViewController {
 
         outputView.defaultParagraphStyle = defaultStyle
         outputView.textContainerInset = NSSize(width: 10.0, height: 10.0)
+
+        Notify.hearAboutSource(self, selector: #selector(self.handleSourceUpdate))
+    }
+
+    @objc func handleSourceUpdate(notification: NSNotification) {
+        let payload = notification.userInfo
+        if let text = payload?["source"] as? CLJSource {
+            clearBuffer()
+            appendParagraph(text.source.tighten())
+        }
     }
 
     override func viewDidAppear() {

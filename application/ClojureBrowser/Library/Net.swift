@@ -31,6 +31,10 @@ struct Net {
         invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns), completion)
     }
 
+    static func getSource(from :String, forSymbol sym: String, _ completion: @escaping completionHandler) {
+        invokeRequest(to: from, withBody: Repl.mkGetSource(forSymbol: sym), completion)
+    }
+
     // MARK: - Implementation and Convenience
 
     private static func invokeRequest(to siteUrl: String, withBody payload: String, _ completion: completionHandler?) {

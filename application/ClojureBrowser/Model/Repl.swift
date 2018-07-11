@@ -26,6 +26,10 @@ struct Repl {
         return encode(op: ReplOp(op: .ns, name: ns))
     }
 
+    static func mkGetSource(forSymbol sym: String) -> String {
+        return encode(op: ReplOp(op: .source, symbol: sym))
+    }
+
     static func encode(op: ReplOp) -> String {
         let encoder = JSONEncoder()
         let data = try! encoder.encode(op)
@@ -57,7 +61,13 @@ struct ReplOp : Codable {
         self.name = name
     }
 
+    init(op: Operation, symbol: String) {
+        self.op = op
+        self.symbol = symbol
+    }
+
     var op: Operation
     var expr: String?
     var name: String?
+    var symbol: String?
 }

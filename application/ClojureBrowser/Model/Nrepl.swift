@@ -37,7 +37,6 @@ struct Summary {
 
     init(_ packets: [NreplResponse]) {
         for packet in packets {
-//            print(packet)
 
             if let out = packet.out {
                 self.output = self.output ?? "" + out

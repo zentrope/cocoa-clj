@@ -1072,6 +1072,7 @@ Gw
                                                         </tableColumn>
                                                     </tableColumns>
                                                     <connections>
+                                                        <action trigger="doubleAction" selector="doubleClicked:" target="Yyz-BI-Uth" id="j56-ed-ybs"/>
                                                         <outlet property="dataSource" destination="Yyz-BI-Uth" id="spB-dS-FQl"/>
                                                         <outlet property="delegate" destination="Yyz-BI-Uth" id="eet-FV-SGp"/>
                                                     </connections>

@@ -41,6 +41,25 @@ struct Namespace {
             return [CLJSymbol]()
         }
     }
+
+    static func decodeSource(jsonString: String) -> CLJSource {
+        let jsonData = jsonString.data(using: .utf8)!
+        let decoder = JSONDecoder()
+
+        do {
+            return try decoder.decode(CLJSource.self, from: jsonData)
+        }
+
+        catch let error {
+            Log.error("data \(jsonString)")
+            Log.error(error.localizedDescription)
+            return CLJSource(source: error.localizedDescription)
+        }
+    }
+}
+
+struct CLJSource : Codable {
+    var source: String
 }
 
 class CLJNameSpace : Codable {
