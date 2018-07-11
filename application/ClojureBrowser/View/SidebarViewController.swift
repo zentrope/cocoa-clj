@@ -13,27 +13,44 @@ class SidebarViewController: NSViewController {
     // MARK: - Outlets
 
     @IBOutlet weak var outlineView: NSOutlineView!
+    @IBOutlet weak var searchField: NSSearchField!
 
     // MARK: - Data
 
     var namespaces = [CLJNameSpace]()
     var symbols = [String: [CLJSymbol]]()
+    var filteredNamespaces = [CLJNameSpace]()
+    var filter = ""
 
     // MARK: - View controller
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let name = Notification.Name("refresh")
-        let center = NotificationCenter.default
-        center.addObserver(self, selector: #selector(self.refresh), name: name, object: nil)
-
-        // It's OK if this fails
         loadNamespaces()
+        filter = ""
     }
 
-    @objc func refresh(notification: NSNotification) {
-        loadNamespaces()
+    // MARK: - Implementation
+
+    private func reset() {
+        filter = ""
+        self.searchField.stringValue = ""
+        self.filteredNamespaces = self.filterNamespaces()
+        self.symbols.removeAll()
+        self.outlineView.reloadData()
+    }
+
+    private func filterNamespaces() -> [CLJNameSpace] {
+        if namespaces.isEmpty {
+            return self.namespaces
+        }
+
+        if filter.isEmpty {
+            return self.namespaces
+        }
+
+        let term = filter.lowercased()
+        return namespaces.filter({ ns in ns.name.contains(term) })
     }
 
     private func loadNamespaces() {
@@ -41,14 +58,14 @@ class SidebarViewController: NSViewController {
         Net.getNameSpaces(site: Prefs().replUrl) { error, text in
             if let e = error {
                 Log.error(e.localizedDescription)
+                return
             }
 
             if let t = text {
                 let nss = Namespace.decodeNameSpace(jsonString: t)
                 Log.info("loaded \(nss.count) namespaces")
                 self.namespaces = nss
-                self.symbols.removeAll()
-                self.outlineView.reloadData()
+                self.reset()
             }
         }
     }
@@ -60,18 +77,11 @@ class SidebarViewController: NSViewController {
         Net.getSymbols(from: Prefs().replUrl, inNamespace: namespace.name) { error, text in
             if let e = error {
                 Log.error(e.localizedDescription)
+                return
             }
 
             if let t = text {
                 let syms = Namespace.decodeSymbols(jsonString: t)
-                Log.info("loaded \(syms.count) symbols for \(namespace.name)")
-
-                for ns in self.namespaces {
-                    if ns.name != namespace.name {
-                        self.outlineView.collapseItem(ns)
-                    }
-                }
-
                 let pubs = syms.filter({ s in !(s.isPrivate ?? false)})
                 let privs = syms.filter({ s in (s.isPrivate ?? false)})
                 self.symbols[namespace.name] = pubs + privs
@@ -83,35 +93,15 @@ class SidebarViewController: NSViewController {
 
     // MARK: - Actions
     
-    func refreshNamespaceButtonClick(_ sender: NSToolbarItem) {
-        Log.info("REFRESHING NAMESPACES")
-        loadNamespaces()
+    @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
+        self.filter = sender.stringValue
+        self.filteredNamespaces = self.filterNamespaces()
+        self.outlineView.reloadData()
     }
 
-//    @IBAction func doubleClickedItem(_ sender: NSOutlineView) {
-//        let item = sender.item(atRow: sender.clickedRow)
-//        let text = String(describing: item)
-//        Log.info("double click \(text)")
-//
-//
-//    }
-//
-//    @IBAction func clickedItem(_ sender: NSOutlineView) {
-//        let item = sender.item(atRow: sender.clickedRow)
-//        let text = String(describing: item)
-//        Log.info("click \(text)")
-//
-//        if item is CLJNameSpace {
-//            if sender.isItemExpanded(item) {
-//                Log.info("- collapsing")
-//                sender.collapseItem(item)
-//            } else {
-//                Log.info(" - expanding")
-//                sender.expandItem(item)
-//            }
-//        }
-//    }
-
+    @IBAction func refreshButtonClicked(_ sender: NSButton) {
+        loadNamespaces()
+    }
 }
 
 extension SidebarViewController: NSOutlineViewDataSource {
@@ -119,8 +109,11 @@ extension SidebarViewController: NSOutlineViewDataSource {
     // MARK: - Outline dataource delegate
 
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
+
+        let nss = self.filteredNamespaces
+
         if item == nil {
-            return namespaces.count
+            return nss.count
         }
 
         if let ns = item as? CLJNameSpace {
@@ -134,7 +127,9 @@ extension SidebarViewController: NSOutlineViewDataSource {
         if let ns = item as? CLJNameSpace {
             return symbols[ns.name]![index]
         }
-        return namespaces[index]
+
+        let nss = self.filteredNamespaces
+        return nss[index]
     }
 
     func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
