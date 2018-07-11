@@ -14,6 +14,7 @@ class SidebarViewController: NSViewController {
 
     @IBOutlet weak var outlineView: NSOutlineView!
     @IBOutlet weak var searchField: NSSearchField!
+    @IBOutlet weak var publicFilterButton: NSButton!
 
     // MARK: - Data
 
@@ -21,6 +22,7 @@ class SidebarViewController: NSViewController {
     var symbols = [String: [CLJSymbol]]()
     var filteredNamespaces = [CLJNameSpace]()
     var filter = ""
+    var showOnlyPublic = false
 
     // MARK: - View controller
 
@@ -28,6 +30,7 @@ class SidebarViewController: NSViewController {
         super.viewDidLoad()
         loadNamespaces()
         filter = ""
+        showOnlyPublic = publicFilterButton.state == NSControl.StateValue.on
     }
 
     // MARK: - Implementation
@@ -91,6 +94,17 @@ class SidebarViewController: NSViewController {
         }
     }
 
+    func findSymbols(inNamespace name: String) -> [CLJSymbol] {
+        guard let syms = symbols[name] else {
+            return [CLJSymbol]()
+        }
+
+        if showOnlyPublic {
+            return syms.filter({ s in !(s.isPrivate ?? false) })
+        }
+        return syms
+    }
+
     // MARK: - Actions
     
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
@@ -101,6 +115,11 @@ class SidebarViewController: NSViewController {
 
     @IBAction func refreshButtonClicked(_ sender: NSButton) {
         loadNamespaces()
+    }
+
+    @IBAction func togglePublicFlag(_ sender: NSButton) {
+        showOnlyPublic = !showOnlyPublic
+        outlineView.reloadData()
     }
 }
 
@@ -117,7 +136,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
         }
 
         if let ns = item as? CLJNameSpace {
-            return symbols[ns.name]?.count ?? 0
+            return findSymbols(inNamespace: ns.name).count
         }
 
         return 0
@@ -125,7 +144,8 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
     func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
         if let ns = item as? CLJNameSpace {
-            return symbols[ns.name]![index]
+            return findSymbols(inNamespace: ns.name)[index]
+            //return symbols[ns.name]![index]
         }
 
         let nss = self.filteredNamespaces
