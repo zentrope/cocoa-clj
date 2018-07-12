@@ -22,12 +22,13 @@ struct Repl {
         return encode(op: ReplOp(op: .nss))
     }
 
-    static func mkGetSymbols(inNs ns: String) -> String {
-        return encode(op: ReplOp(op: .ns, name: ns))
+    static func mkGetSymbols(inNs ns: CLJNameSpace) -> String {
+        return encode(op: ReplOp(op: .ns, name: ns.name))
     }
 
-    static func mkGetSource(forSymbol sym: String) -> String {
-        return encode(op: ReplOp(op: .source, symbol: sym))
+    static func mkGetSource(forSymbol sym: CLJSymbol) -> String {
+        let ref = "\(sym.ns)/\(sym.name)"
+        return encode(op: ReplOp(op: .source, symbol: ref))
     }
 
     static func encode(op: ReplOp) -> String {

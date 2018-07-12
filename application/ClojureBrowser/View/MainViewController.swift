@@ -36,7 +36,11 @@ class MainViewController: NSViewController {
         outputView.defaultParagraphStyle = defaultStyle
         outputView.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
-        Notify.hearAboutSource(self, selector: #selector(self.handleSourceUpdate))
+        Notify.shared.register(sourceReceiver: self)
+    }
+
+    override func viewWillDisappear() {
+        Notify.shared.unregister(sourceReceiver: self)
     }
 
     @objc func handleSourceUpdate(notification: NSNotification) {
@@ -55,15 +59,9 @@ class MainViewController: NSViewController {
             win.makeFirstResponder(userInputTextField)
         }
 
-        Log.info("Welcome 🙈🙉🙊")
+        Log.info("Welcome")
     }
     
-    override var representedObject: Any? {
-        didSet {
-        // Update the view, if already loaded.
-        }
-    }
-
     // MARK: - Buffer Management
 
     func appendParagraph(_ line: String) {
@@ -130,3 +128,11 @@ class MainViewController: NSViewController {
     }
 }
 
+extension MainViewController: SourceDataReceiver {
+
+    func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol) {
+        clearBuffer()
+        appendParagraph(symbolSource.source.tighten())
+    }
+
+}

@@ -23,16 +23,46 @@ struct Net {
         invokeRequest(to: site, withBody: Repl.mkEval(expr: form), completion)
     }
 
-    static func getNameSpaces(site: String, _ completion: @escaping completionHandler) {
-        invokeRequest(to: site, withBody: Repl.mkGetNameSpaces(), completion)
+    static func getNameSpaces(site: String) {
+        invokeRequest(to: site, withBody: Repl.mkGetNameSpaces()) { error, text in
+            if let e = error {
+                Log.error(e.localizedDescription)
+                return
+            }
+
+            if let t = text {
+                let nss = Namespace.decodeNameSpace(jsonString: t)
+                Notify.shared.deliverNamespaces(namespaces: nss)
+            }
+        }
     }
 
-    static func getSymbols(from: String, inNamespace ns: String, _ completion: @escaping completionHandler) {
-        invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns), completion)
+    static func getSymbols(from: String, inNamespace ns: CLJNameSpace) {
+        invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns)) { error, text in
+            if let e = error {
+                Log.error(e.localizedDescription)
+                return
+            }
+
+            if let t = text {
+                let syms = Namespace.decodeSymbols(jsonString: t)
+                Notify.shared.deliverSymbols(symbols: syms, inNamespace: ns)
+            }
+        }
     }
 
-    static func getSource(from :String, forSymbol sym: String, _ completion: @escaping completionHandler) {
-        invokeRequest(to: from, withBody: Repl.mkGetSource(forSymbol: sym), completion)
+    static func getSource(from :String, forSymbol sym: CLJSymbol) {
+        invokeRequest(to: from, withBody: Repl.mkGetSource(forSymbol: sym)) { error, text in
+            if let e = error {
+                Log.error(e.localizedDescription)
+                return
+            }
+
+            if let t = text {
+                let source = Namespace.decodeSource(jsonString: t)
+                Notify.shared.deliverSource(source: source, forSymbol: sym)
+            }
+        }
     }
 
     // MARK: - Implementation and Convenience

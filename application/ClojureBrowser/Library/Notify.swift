@@ -8,18 +8,73 @@
 
 import Foundation
 
-struct Notify {
-    // I'm guessing this makes sense just to centralize these implementations.
+class Notify {
 
-    static let SymbolSource = NSNotification.Name("symbol.source")
+    static var shared = Notify()
 
-    static func aboutSource(source: CLJSource, forSymbol sym: CLJSymbol) {
-        let data: [AnyHashable:Any] = ["source": source, "symbol": sym]
-        NotificationCenter.default.post(name: SymbolSource, object: nil, userInfo: data)
+    // Unnecessary, but ¯\_(ツ)_/¯.
+    private let sourceQ = DispatchQueue(label: "zentrope.notify.source")
+    private let nameQ = DispatchQueue(label: "zentrope.notify.names")
+    private let symbolQ = DispatchQueue(label: "zentrope.notify.symbols")
+
+    private var sourceReceivers = [SourceDataReceiver]()
+    private var namespaceReceivers = [NamespaceDataReceiver]()
+    private var symbolReceivers = [SymbolsDataReceiver]()
+
+    private init() {
     }
 
-    static func hearAboutSource(_ observer: Any, selector aSelector: Selector) {
-        NotificationCenter.default.addObserver(observer, selector: aSelector, name: SymbolSource, object: nil)
+    // MARK: - Registration
+
+    func register(sourceReceiver handler: SourceDataReceiver) {
+        sourceQ.sync {
+            sourceReceivers.append(handler)
+        }
     }
 
+    func register(namespaceReceiver handler: NamespaceDataReceiver) {
+        nameQ.sync {
+            namespaceReceivers.append(handler)
+        }
+    }
+
+    func register(symbolsReceiver handler: SymbolsDataReceiver) {
+        symbolQ.sync {
+            symbolReceivers.append(handler)
+        }
+    }
+
+    // MARK: - Unregistration
+
+    func unregister(sourceReceiver handler: SourceDataReceiver) {
+        sourceQ.sync {
+            sourceReceivers = sourceReceivers.filter { $0 !== handler }
+        }
+    }
+
+    func unregister(namespaceReceiver handler: NamespaceDataReceiver) {
+        nameQ.sync {
+            namespaceReceivers = namespaceReceivers.filter { $0 !== handler }
+        }
+    }
+
+    func unregister(symbolsReceiver handler: SymbolsDataReceiver) {
+        symbolQ.sync {
+            symbolReceivers = symbolReceivers.filter { $0 !== handler }
+        }
+    }
+
+    // MARK: - Delivery
+
+    func deliverSource(source: CLJSource, forSymbol sym: CLJSymbol) {
+        sourceReceivers.forEach { $0.receive(symbolSource: source, forSymbol: sym) }
+    }
+
+    func deliverNamespaces(namespaces nss: [CLJNameSpace]) {
+        namespaceReceivers.forEach { $0.receive(namespaces: nss)}
+    }
+
+    func deliverSymbols(symbols syms: [CLJSymbol], inNamespace ns: CLJNameSpace) {
+        symbolReceivers.forEach { $0.receive(symbols: syms, forNamespace: ns) }
+    }
 }

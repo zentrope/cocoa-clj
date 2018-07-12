@@ -28,9 +28,16 @@ class SidebarViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        Notify.shared.register(namespaceReceiver: self)
+        Notify.shared.register(symbolsReceiver: self)
         loadNamespaces()
         filter = ""
         showOnlyPublic = publicFilterButton.state == NSControl.StateValue.on
+    }
+
+    override func viewWillDisappear() {
+        Notify.shared.unregister(namespaceReceiver: self)
+        Notify.shared.unregister(symbolsReceiver: self)
     }
 
     // MARK: - Implementation
@@ -57,41 +64,14 @@ class SidebarViewController: NSViewController {
     }
 
     private func loadNamespaces() {
-        Log.info("refreshing namespaces")
-        Net.getNameSpaces(site: Prefs().replUrl) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-                return
-            }
-
-            if let t = text {
-                let nss = Namespace.decodeNameSpace(jsonString: t)
-                Log.info("loaded \(nss.count) namespaces")
-                self.namespaces = nss
-                self.reset()
-            }
-        }
+        Net.getNameSpaces(site: Prefs().replUrl)
     }
 
     private func loadSymbols(namespace: CLJNameSpace) {
         if self.symbols[namespace.name] != nil {
             return
         }
-        Net.getSymbols(from: Prefs().replUrl, inNamespace: namespace.name) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-                return
-            }
-
-            if let t = text {
-                let syms = Namespace.decodeSymbols(jsonString: t)
-                let pubs = syms.filter({ s in !(s.isPrivate ?? false)})
-                let privs = syms.filter({ s in (s.isPrivate ?? false)})
-                self.symbols[namespace.name] = pubs + privs
-                self.outlineView.reloadItem(namespace, reloadChildren: true)
-            }
-
-        }
+        Net.getSymbols(from: Prefs().replUrl, inNamespace: namespace)
     }
 
     func findSymbols(inNamespace name: String) -> [CLJSymbol] {
@@ -125,19 +105,23 @@ class SidebarViewController: NSViewController {
     @IBAction func doubleClicked(_ sender: NSOutlineView) {
         let item = sender.item(atRow: sender.clickedRow)
         if let sym = item as? CLJSymbol {
-            let ref = "\(sym.ns)/\(sym.name)"
-            Net.getSource(from: Prefs().replUrl, forSymbol: ref) { error, text in
-                if let e = error {
-                    Log.error(e.localizedDescription)
-                    return
-                }
-
-                if let t = text {
-                    let source = Namespace.decodeSource(jsonString: t)
-                    Notify.aboutSource(source: source, forSymbol: sym)
-                }
-            }
+            Net.getSource(from: Prefs().replUrl, forSymbol: sym)
         }
+    }
+}
+
+extension SidebarViewController: NamespaceDataReceiver, SymbolsDataReceiver {
+
+    func receive(symbols: [CLJSymbol], forNamespace ns: CLJNameSpace) {
+        let pubs = symbols.filter({ s in !(s.isPrivate ?? false)})
+        let privs = symbols.filter({ s in (s.isPrivate ?? false)})
+        self.symbols[ns.name] = pubs + privs
+        self.outlineView.reloadItem(ns, reloadChildren: true)
+    }
+
+    func receive(namespaces: [CLJNameSpace]) {
+        self.namespaces = namespaces
+        self.reset()
     }
 }
 
