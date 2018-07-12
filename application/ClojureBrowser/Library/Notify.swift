@@ -67,14 +67,26 @@ class Notify {
     // MARK: - Delivery
 
     func deliverSource(source: CLJSource, forSymbol sym: CLJSymbol) {
-        sourceReceivers.forEach { $0.receive(symbolSource: source, forSymbol: sym) }
+        sourceQ.async {
+            DispatchQueue.main.async {
+                self.sourceReceivers.forEach { $0.receive(symbolSource: source, forSymbol: sym) }
+            }
+        }
     }
 
     func deliverNamespaces(namespaces nss: [CLJNameSpace]) {
-        namespaceReceivers.forEach { $0.receive(namespaces: nss)}
+        nameQ.async {
+            DispatchQueue.main.async {
+                self.namespaceReceivers.forEach { $0.receive(namespaces: nss)}
+            }
+        }
     }
 
     func deliverSymbols(symbols syms: [CLJSymbol], inNamespace ns: CLJNameSpace) {
-        symbolReceivers.forEach { $0.receive(symbols: syms, forNamespace: ns) }
+        symbolQ.async {
+            DispatchQueue.main.async {
+                self.symbolReceivers.forEach { $0.receive(symbols: syms, forNamespace: ns) }
+            }
+        }
     }
 }
