@@ -60,6 +60,7 @@ class TerminalTextView: NSTextView {
     }
 
     override func becomeFirstResponder() -> Bool {
+        Log.info("terminal is becoming first responder")
         //clearBuffer()
         prompt()
         self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
@@ -69,6 +70,7 @@ class TerminalTextView: NSTextView {
     }
 
     override func resignFirstResponder() -> Bool {
+        Log.info("terminal is resigning first responder")
         if let mon = self.keyboardEventMonitor {
             NSEvent.removeMonitor(mon)
         }
@@ -91,20 +93,20 @@ class TerminalTextView: NSTextView {
         let key = Int(theEvent.keyCode)
         let flags = theEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-        if flags.contains(.command) { print("COMMAND") }
-        if flags.contains(.option) { print( "OPTION") }
-        if flags.contains(.control) { print( "CONTROL") }
-        if flags.contains(.function) { print( "FUNCTION") }
+        if flags.contains(.command) { print("COMMAND \(key)") }
+        if flags.contains(.option) { print( "OPTION \(key)") }
+        if flags.contains(.control) { print( "CONTROL \(key)") }
+        if flags.contains(.function) { print( "FUNCTION \(key)") }
 
-        if flags.isSuperset(of: [.shift]) {
-            print("SHIFT")
+        if flags.contains(.control) && (key == 8) {
+            clearBuffer()
+            prompt()
         }
 
         if let code = KeyCodes(rawValue: key) {
             switch code {
             case .kcReturnKey:
-                self.append("\n$ ")
-                self.appendCursor()
+                self.prompt()
             case .kcDeleteKey:
                 self.backspace()
             }
@@ -150,7 +152,6 @@ extension TerminalTextView {
     // MARK: - Terminal functions
 
     func lastChar(_ string: NSMutableString) -> NSRange {
-        //guard let storage = self.textStorage else { return NSMakeRange(0, 0) }
         let len = string.length
         return NSMakeRange(len - cursorSize, cursorSize)
     }
