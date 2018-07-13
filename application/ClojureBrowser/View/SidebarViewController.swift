@@ -28,16 +28,14 @@ class SidebarViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        Notify.shared.register(namespaceReceiver: self)
-        Notify.shared.register(symbolsReceiver: self)
+        Notify.shared.register(receiver: self)
         loadNamespaces()
         filter = ""
         showOnlyPublic = publicFilterButton.state == NSControl.StateValue.on
     }
 
     override func viewWillDisappear() {
-        Notify.shared.unregister(namespaceReceiver: self)
-        Notify.shared.unregister(symbolsReceiver: self)
+        Notify.shared.unregister(receiver: self)
     }
 
     // MARK: - Implementation

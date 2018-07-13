@@ -36,11 +36,11 @@ class MainViewController: NSViewController {
         outputView.defaultParagraphStyle = defaultStyle
         outputView.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
-        Notify.shared.register(sourceReceiver: self)
+        Notify.shared.register(receiver: self)
     }
 
     override func viewWillDisappear() {
-        Notify.shared.unregister(sourceReceiver: self)
+        Notify.shared.unregister(receiver: self)
     }
 
     @objc func handleSourceUpdate(notification: NSNotification) {

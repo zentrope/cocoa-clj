@@ -7,86 +7,63 @@
 //
 
 import Foundation
+import Cocoa
 
 class Notify {
 
     static var shared = Notify()
 
-    // Unnecessary, but ¯\_(ツ)_/¯.
-    private let sourceQ = DispatchQueue(label: "zentrope.notify.source")
-    private let nameQ = DispatchQueue(label: "zentrope.notify.names")
-    private let symbolQ = DispatchQueue(label: "zentrope.notify.symbols")
-
-    private var sourceReceivers = [SourceDataReceiver]()
-    private var namespaceReceivers = [NamespaceDataReceiver]()
-    private var symbolReceivers = [SymbolsDataReceiver]()
+    private let accessQ = DispatchQueue(label: "zentrope.notify.controller")
+    private var controllers = [NSViewController]()
 
     private init() {
     }
 
     // MARK: - Registration
 
-    func register(sourceReceiver handler: SourceDataReceiver) {
-        sourceQ.sync {
-            sourceReceivers.append(handler)
+    func register(receiver handler: NSViewController) {
+        accessQ.sync {
+            controllers.append(handler)
         }
     }
 
-    func register(namespaceReceiver handler: NamespaceDataReceiver) {
-        nameQ.sync {
-            namespaceReceivers.append(handler)
-        }
-    }
-
-    func register(symbolsReceiver handler: SymbolsDataReceiver) {
-        symbolQ.sync {
-            symbolReceivers.append(handler)
-        }
-    }
-
-    // MARK: - Unregistration
-
-    func unregister(sourceReceiver handler: SourceDataReceiver) {
-        sourceQ.sync {
-            sourceReceivers = sourceReceivers.filter { $0 !== handler }
-        }
-    }
-
-    func unregister(namespaceReceiver handler: NamespaceDataReceiver) {
-        nameQ.sync {
-            namespaceReceivers = namespaceReceivers.filter { $0 !== handler }
-        }
-    }
-
-    func unregister(symbolsReceiver handler: SymbolsDataReceiver) {
-        symbolQ.sync {
-            symbolReceivers = symbolReceivers.filter { $0 !== handler }
+    func unregister(receiver handler: NSViewController) {
+        accessQ.sync {
+            controllers = controllers.filter { $0 != handler }
         }
     }
 
     // MARK: - Delivery
 
     func deliverSource(source: CLJSource, forSymbol sym: CLJSymbol) {
-        sourceQ.async {
-            DispatchQueue.main.async {
-                self.sourceReceivers.forEach { $0.receive(symbolSource: source, forSymbol: sym) }
-            }
+        withSync { c in
+            guard let handler = c as? SourceDataReceiver else { return }
+            DispatchQueue.main.async { handler.receive(symbolSource: source, forSymbol: sym) }
         }
     }
 
     func deliverNamespaces(namespaces nss: [CLJNameSpace]) {
-        nameQ.async {
-            DispatchQueue.main.async {
-                self.namespaceReceivers.forEach { $0.receive(namespaces: nss)}
-            }
+        withSync { c in
+            guard let handler = c as? NamespaceDataReceiver else { return }
+            DispatchQueue.main.async { handler.receive(namespaces: nss) }
         }
     }
 
     func deliverSymbols(symbols syms: [CLJSymbol], inNamespace ns: CLJNameSpace) {
-        symbolQ.async {
-            DispatchQueue.main.async {
-                self.symbolReceivers.forEach { $0.receive(symbols: syms, forNamespace: ns) }
+        withSync { c in
+            guard let handler = c as? SymbolsDataReceiver else { return }
+            DispatchQueue.main.async { handler.receive(symbols: syms, forNamespace: ns) }
+        }
+    }
+
+    private func withSync(closure: @escaping (_ c: NSViewController) -> ()) {
+        // I don't think you can pass in a protocol type to filter with
+        // here. A Swift limitation.
+        accessQ.sync {
+            controllers.forEach {
+                closure($0)
             }
         }
     }
+
 }
