@@ -50,39 +50,42 @@ class TerminalTextView: NSTextView {
         setup()
     }
 
-//    override var acceptsFirstResponder: Bool {
-//        return true
-//    }
-//
-//    override func becomeFirstResponder() -> Bool {
-//        return true
-//    }
-//
-//    override func resignFirstResponder() -> Bool {
-//        return true
-//    }
 
     // MARK: - Interaction management
 
-    func setup() {
+    var keyboardEventMonitor: Any? = nil
+
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        //clearBuffer()
+        prompt()
+        self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
+            return self.handleKeyDown(with: $0) == .handled ? nil : $0
+        }
+        return true
+    }
+
+    override func resignFirstResponder() -> Bool {
+        if let mon = self.keyboardEventMonitor {
+            NSEvent.removeMonitor(mon)
+        }
+        return true
+    }
+
+    private func setup() {
         print("set up")
 
         self.defaultParagraphStyle = defaultStyle
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
-//        NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
-//            // This takes over for the entire window. None of the other widgets
-//            // will get any keyboard input.
-//            return self.handleKeyDown(with: $0) == .handled ? nil : $0
-//        }
-
-        self.append("\n$ ")
-        self.appendCursor()
+        self.clearBuffer()
+        self.prompt()
     }
 
-    func handleKeyDown(with theEvent: NSEvent) -> Handled {
-//        guard let locWindow = self.view.window,
-//            NSApplication.shared.keyWindow === locWindow else { return }
+    private func handleKeyDown(with theEvent: NSEvent) -> Handled {
 
         let chs = theEvent.characters ?? ""
         let key = Int(theEvent.keyCode)
@@ -113,6 +116,9 @@ class TerminalTextView: NSTextView {
         return .handled
     }
 
+}
+
+extension TerminalTextView {
     // MARK: - Buffer management
     
     func clearBuffer() {
@@ -206,6 +212,7 @@ class TerminalTextView: NSTextView {
     }
 
     func prompt() {
+        removeCursor()
         append("\n$ ")
         appendCursor()
     }
