@@ -93,14 +93,22 @@ class TerminalTextView: NSTextView {
         let key = Int(theEvent.keyCode)
         let flags = theEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-        if flags.contains(.command) { print("COMMAND \(key)") }
-        if flags.contains(.option) { print( "OPTION \(key)") }
-        if flags.contains(.control) { print( "CONTROL \(key)") }
-        if flags.contains(.function) { print( "FUNCTION \(key)") }
+        if flags.contains(.command) { Log.info("COMMAND \(key)") }
+        if flags.contains(.option) { Log.info( "OPTION \(key)") }
+        if flags.contains(.control) { Log.info( "CONTROL \(key)") }
+        if flags.contains(.function) { Log.info( "FUNCTION \(key)") }
+
+        let modified = flags.contains(.command) || flags.contains(.option) ||
+            flags.contains(.control) || flags.contains(.function)
 
         if flags.contains(.control) && (key == 8) {
             clearBuffer()
             prompt()
+            return .handled
+        }
+
+        if modified {
+            return .unhandled
         }
 
         if let code = KeyCodes(rawValue: key) {
