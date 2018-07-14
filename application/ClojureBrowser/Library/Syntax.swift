@@ -29,7 +29,7 @@ class Syntax {
         let dynamicHint = Hint("[*]\\S+[*]",                NSColor.systemRed)
         let nsHint      = Hint("(?<=[(])([.]|\\w)+(?=[/])", NSColor.systemPurple)
         let commentHint = Hint("[;].+?[\\n]",               NSColor.systemGray)
-        let stringHint  = Hint("[\"].+?[\"]",               NSColor.systemOrange)
+        let stringHint  = Hint("[\"].+?(?>[^\\\\])[\"]",    NSColor.systemOrange)
 
         self.hints = [
             keywordHint,
