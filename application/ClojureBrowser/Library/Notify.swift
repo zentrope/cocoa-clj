@@ -9,6 +9,18 @@
 import Foundation
 import Cocoa
 
+protocol SourceDataReceiver: class {
+    func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol)
+}
+
+protocol NamespaceDataReceiver: class {
+    func receive(namespaces: [CLJNameSpace])
+}
+
+protocol SymbolsDataReceiver: class {
+    func receive(symbols: [CLJSymbol], forNamespace ns: CLJNameSpace)
+}
+
 class Notify {
 
     static var shared = Notify()
@@ -57,8 +69,6 @@ class Notify {
     }
 
     private func withSync(closure: @escaping (_ c: NSViewController) -> ()) {
-        // I don't think you can pass in a protocol type to filter with
-        // here. A Swift limitation.
         accessQ.sync {
             controllers.forEach {
                 closure($0)

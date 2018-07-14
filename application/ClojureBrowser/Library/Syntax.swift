@@ -16,16 +16,9 @@ class Syntax {
     var hints = [Hint]()
 
     private init() {
-        // Missing:
-        //
-        //  #_(some-form should be comment to end of form)
-        //
-
-
-        // Cheating: The first symbol in a form gets the keyword color
         let keywordHint = Hint("(?<=[(]).+?(?=[ ])",        NSColor.systemBlue)
         let kwsHint     = Hint("[:]\\w+",                   NSColor.systemBrown)
-        let parensHint  = Hint("[()\\[\\]]",                NSColor.systemGray)
+        let parensHint  = Hint("[()\\[\\]{}]",              NSColor.systemGray)
         let dynamicHint = Hint("[*]\\S+[*]",                NSColor.systemRed)
         let nsHint      = Hint("(?<=[(])([.]|\\w)+(?=[/])", NSColor.systemPurple)
         let commentHint = Hint("[;].+?[\\n]",               NSColor.systemGray)
@@ -37,11 +30,8 @@ class Syntax {
             parensHint,
             dynamicHint,
             nsHint,
-            // Order matters as these will erase any previous
-            // attributes. So, CLJ code inside a comment should
-            // look like a comment, not like code
-            commentHint,
-            stringHint
+            commentHint, // previous hints erased
+            stringHint   // strings in comments still orange
         ]
     }
 
