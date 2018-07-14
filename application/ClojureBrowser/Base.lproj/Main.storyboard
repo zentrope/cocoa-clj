@@ -893,7 +893,7 @@ Gw
                 </viewController>
                 <customObject id="EQS-ro-347" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="545" y="-510"/>
+            <point key="canvasLocation" x="32" y="-83"/>
         </scene>
         <!--Window Controller-->
         <scene sceneID="LwG-ij-PR7">
@@ -914,7 +914,7 @@ Gw
                 </windowController>
                 <customObject id="qpQ-1L-epN" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-275" y="21"/>
+            <point key="canvasLocation" x="-479" y="-485"/>
         </scene>
         <!--Split View Controller-->
         <scene sceneID="cVC-cN-2WO">
@@ -939,7 +939,7 @@ Gw
                 </splitViewController>
                 <customObject id="kJR-q7-8MO" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="32" y="533"/>
+            <point key="canvasLocation" x="-479" y="-48"/>
         </scene>
         <!--Sidebar View Controller-->
         <scene sceneID="nwt-9Y-36X">
@@ -1151,7 +1151,7 @@ Gw
                 </viewController>
                 <customObject id="Gs1-Dh-Qao" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-356" y="1100"/>
+            <point key="canvasLocation" x="-688" y="641"/>
         </scene>
         <!--Main View Controller-->
         <scene sceneID="Ltw-18-UTi">
@@ -1197,7 +1197,7 @@ Gw
                 </viewController>
                 <customObject id="Eyg-1H-5Vv" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="240" y="1437"/>
+            <point key="canvasLocation" x="-255" y="610"/>
         </scene>
     </scenes>
     <resources>

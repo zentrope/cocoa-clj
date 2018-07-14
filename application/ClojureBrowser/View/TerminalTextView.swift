@@ -19,17 +19,12 @@ enum Handled {
 }
 
 protocol TerminalTextViewDelegate {
-    func userTypedForm(form: String, sender: TerminalTextView)
 
-    // Additional delegates?
-
-    // The idea is to generalize this enough to be any sort of
-    // command-line terminal style thing.
-
-    // func styleCommand(...)
+    func getPrompt() -> NSAttributedString
+    func invokeCommand(cmd: String, sender: TerminalTextView)
+    func styleCommand(cmd: NSMutableAttributedString, range: NSRange, sender: TerminalTextView)
     // func styleOutput(...)
-    // func invokeCommand(cmd: String, sender: TerminalTextView)
-    // func getPrompt -> NSAttributedString
+
 }
 
 class TerminalTextView: NSTextView {
@@ -44,7 +39,6 @@ class TerminalTextView: NSTextView {
     lazy var defaultStyle: NSMutableParagraphStyle = {
         let s = NSMutableParagraphStyle()
         s.lineSpacing = lineSpacing
-        //s.lineBreakMode = .byTruncatingTail
         return s
     }()
 
@@ -136,15 +130,7 @@ class TerminalTextView: NSTextView {
         if let code = KeyCodes(rawValue: key) {
             switch code {
             case .kcReturnKey:
-                if let form = lastLine() {
-                    if let delegate = self.termDelegate {
-                        delegate.userTypedForm(form: form, sender: self)
-                    }
-                } else {
-                    // If the user pressed return, start a
-                    // new prompt.
-                    self.prompt()
-                }
+                dispatchInvokeCommand()
             case .kcDeleteKey:
                 self.backspace()
             }
@@ -153,14 +139,45 @@ class TerminalTextView: NSTextView {
 
         self.append(chs)
         self.appendCursor()
+        dispatchStyleCommand()
         return .handled
     }
 
 }
 
+// MARK: - Delegate dispatch commands
+
 extension TerminalTextView {
-    // MARK: - Buffer management
-    
+
+    func dispatchInvokeCommand() {
+        guard let delegate = self.termDelegate else { return }
+
+        if let form = lastLine() {
+            delegate.invokeCommand(cmd: form, sender: self)
+            return
+        }
+        self.prompt()
+    }
+
+    func dispatchStyleCommand() {
+        guard let delegate = self.termDelegate else { return }
+        guard let storage = self.textStorage else { return }
+        let cmdRange = self.cmdRange()
+        if !cmdRange.isEmpty {
+            delegate.styleCommand(cmd: storage, range: cmdRange, sender: self)
+        }
+    }
+
+    func dispatchGetPrompt() -> NSAttributedString {
+        guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
+        return delegate.getPrompt()
+    }
+}
+
+// MARK: - Buffer management
+
+extension TerminalTextView {
+
     func clearBuffer() {
         if let storage = self.textStorage {
             storage.beginEditing()
@@ -246,30 +263,59 @@ extension TerminalTextView {
     }
 
     func prompt() {
+        guard let storage = self.textStorage else { return }
+
         removeCursor()
-        append("\n$ ")
+        storage.beginEditing()
+        storage.append(NSAttributedString(string: "\n"))
+        storage.append(dispatchGetPrompt())
+        storage.endEditing()
         appendCursor()
     }
 
-    func lastLine() -> String? {
-        guard let storage = self.textStorage else {
-            print("No text storage, so no last line.")
-            return nil
+    func cmdRange() -> NSRange {
+        let empty = NSMakeRange(0, 0)
+        guard let storage = self.textStorage else { return empty }
+        let data = storage.string
+        let range = NSMakeRange(0, data.count)
+        let cmdRangePattern = "(?<=[\n]).*?\\z"
+
+        // What if there's no prompt on the last line? Hm.
+        let promptSize = dispatchGetPrompt().length
+
+        do {
+            let regex = try NSRegularExpression(pattern: cmdRangePattern, options: [])
+            if let match = regex.firstMatch(in: data, options: [], range: range) {
+                return NSMakeRange(match.range.location + promptSize, match.range.length - promptSize - cursorSize)
+            } else {
+                return empty
+            }
         }
 
-        // Shouldn't use paragraphs: str.split.reverse.first
-        // Or use a regex to find the range from \n to end of string
-        if let lastLine = storage.paragraphs.last {
-            let text = lastLine.string.replacingOccurrences(of: "$ ", with: "")
-                .replacingOccurrences(of: cursor, with: "")
-                .trimmingCharacters(in: CharacterSet.whitespaces)
-            return text.isEmpty ? nil : text
-        } else {
+        catch {
+            print(error)
+            return empty
+        }
+    }
+
+    func lastLine() -> String? {
+        guard let storage = self.textStorage else { return nil }
+        let range = cmdRange()
+        if range.isEmpty {
             return nil
         }
+        return storage.mutableString.substring(with: range)
     }
 }
 
+extension NSRange {
+
+    var isEmpty : Bool {
+        get {
+            return self.length == 0
+        }
+    }
+}
 // Cursor should be a block of color, not an actual
 // character appended to the buffer. Then we can track
 // where it is, insert characters in the right place,

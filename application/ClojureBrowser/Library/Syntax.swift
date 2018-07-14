@@ -70,4 +70,13 @@ class Syntax {
             apply(syntax: $0, to: source, range: sourceRange)
         }
     }
+
+    func highlight(source: NSMutableAttributedString, withFont face: NSFont, inRange range: NSRange) {
+        source.setAttributes(nil, range: range)
+        source.addAttribute(.font, value: face, range: range)
+
+        hints.forEach {
+            apply(syntax: $0, to: source, range: range)
+        }
+    }
 }
