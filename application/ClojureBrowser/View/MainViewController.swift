@@ -13,7 +13,6 @@ class MainViewController: NSViewController {
     // MARK: - Outlets
 
     @IBOutlet var outputView: TerminalTextView!
-    @IBOutlet weak var userInputTextField: NSTextField!
 
     // MARK: - View Controller Overrides
 
@@ -21,6 +20,8 @@ class MainViewController: NSViewController {
         super.viewDidLoad()
 
         Notify.shared.register(receiver: self)
+        self.outputView.termDelegate = self
+        Log.info("Welcome")
     }
 
     override func viewWillDisappear() {
@@ -28,32 +29,7 @@ class MainViewController: NSViewController {
         Notify.shared.unregister(receiver: self)
     }
 
-    override func viewDidAppear() {
-        userInputTextField.sizeToFit()
-        userInputTextField.display()
-
-        if let win = self.view.window {
-            win.makeFirstResponder(userInputTextField)
-        }
-
-        Log.info("Welcome")
-    }
-    
-    // MARK: - Action Handlers
-
-    @IBAction func onUserInput(_ sender: NSTextField) {
-        let s = sender.stringValue.trimmingCharacters(in: CharacterSet.whitespaces)
-
-        if (s.count > 0) {
-            Log.info("Sending form '\(s)' to buffer.")
-            sendForEval(expr: sender.stringValue)
-        }
-        sender.stringValue = ""
-    }
-
     // MARK: - Evaluation
-
-    var lastNs: String = "user"
 
     func sendForEval(expr: String) {
         let prefs = Prefs()
@@ -73,32 +49,47 @@ class MainViewController: NSViewController {
             let packets = Nrepl.decode(t)
             let summary = Summary(packets)
 
+
             var output = "";
 
-            self.lastNs = summary.ns ?? self.lastNs
-
-            output = output + "\(self.lastNs)> \(expr)\n"
-
             if let out = summary.output {
-                output.append(out.tighten())
+                output.append(out)
             }
 
             if let err = summary.err {
                 output.append(err)
             } else if let val = summary.value {
-                output.append(val.tighten())
+                output.append(val)
             }
 
+            output = "\n\n" + output.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+
+            print("out '\(output)'")
+            // TODO: outputview.showCommandOutput(output)
+            self.outputView.removeCursor()
             self.outputView.paragraph(output)
+            self.outputView.newLine()
+            self.outputView.prompt()
         }
     }
+}
+
+extension MainViewController: TerminalTextViewDelegate {
+
+    func userTypedForm(form: String, sender: TerminalTextView) {
+        Log.info("eval this form? '\(form)'")
+        self.sendForEval(expr: form)
+    }
+
 }
 
 extension MainViewController: SourceDataReceiver {
 
     func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol) {
-        outputView.clearBuffer()
+        // TODO: outputview.showCommandOutput(output)
+        outputView.removeCursor()
         outputView.paragraph(symbolSource.source)
+        outputView.newLine()
         outputView.prompt()
     }
 

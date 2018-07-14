@@ -18,9 +18,25 @@ enum Handled {
     case unhandled
 }
 
+protocol TerminalTextViewDelegate {
+    func userTypedForm(form: String, sender: TerminalTextView)
+
+    // Additional delegates?
+
+    // The idea is to generalize this enough to be any sort of
+    // command-line terminal style thing.
+
+    // func styleCommand(...)
+    // func styleOutput(...)
+    // func invokeCommand(cmd: String, sender: TerminalTextView)
+    // func getPrompt -> NSAttributedString
+}
+
 class TerminalTextView: NSTextView {
 
     // MARK: - Instance data
+
+    var termDelegate: TerminalTextViewDelegate?
 
     let lineSpacing = CGFloat(4.0)
     let defaultFont = NSFont.userFixedPitchFont(ofSize: 12.0)
@@ -28,7 +44,7 @@ class TerminalTextView: NSTextView {
     lazy var defaultStyle: NSMutableParagraphStyle = {
         let s = NSMutableParagraphStyle()
         s.lineSpacing = lineSpacing
-        s.lineBreakMode = NSLineBreakMode.byTruncatingTail
+        //s.lineBreakMode = .byTruncatingTail
         return s
     }()
 
@@ -62,8 +78,6 @@ class TerminalTextView: NSTextView {
 
     override func becomeFirstResponder() -> Bool {
         Log.info("terminal is becoming first responder")
-        //clearBuffer()
-        prompt()
         self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             return self.handleKeyDown(with: $0) == .handled ? nil : $0
         }
@@ -79,15 +93,15 @@ class TerminalTextView: NSTextView {
     }
 
     private func setup() {
-        print("set up")
+        Log.info("set up")
 
         self.defaultParagraphStyle = defaultStyle
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
+        self.clearBuffer()
         if let s = self.textStorage {
             s.font = defaultFont
         }
-        self.clearBuffer()
         self.prompt()
     }
 
@@ -97,6 +111,7 @@ class TerminalTextView: NSTextView {
         let key = Int(theEvent.keyCode)
         let flags = theEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
+        // This is how you figure out what's what
         if flags.contains(.command) { Log.info("COMMAND \(key)") }
         if flags.contains(.option) { Log.info( "OPTION \(key)") }
         if flags.contains(.control) { Log.info( "CONTROL \(key)") }
@@ -105,12 +120,15 @@ class TerminalTextView: NSTextView {
         let modified = flags.contains(.command) || flags.contains(.option) ||
             flags.contains(.control) || flags.contains(.function)
 
-        if flags.contains(.control) && (key == 8) {
+        // Command-K clears the buffer
+        if flags.contains(.command) && (key == 40) {
             clearBuffer()
             prompt()
             return .handled
         }
 
+        // If we're not using a modified key, return it to
+        // the system so ⌘Q, ⌘, (and so on) works.
         if modified {
             return .unhandled
         }
@@ -118,7 +136,15 @@ class TerminalTextView: NSTextView {
         if let code = KeyCodes(rawValue: key) {
             switch code {
             case .kcReturnKey:
-                self.prompt()
+                if let form = lastLine() {
+                    if let delegate = self.termDelegate {
+                        delegate.userTypedForm(form: form, sender: self)
+                    }
+                } else {
+                    // If the user pressed return, start a
+                    // new prompt.
+                    self.prompt()
+                }
             case .kcDeleteKey:
                 self.backspace()
             }
@@ -213,10 +239,34 @@ extension TerminalTextView {
         self.scrollToEndOfDocument(self)
     }
 
+    func newLine() {
+        removeCursor()
+        append("\n")
+        appendCursor()
+    }
+
     func prompt() {
         removeCursor()
-        append("\n\n$ ")
+        append("\n$ ")
         appendCursor()
+    }
+
+    func lastLine() -> String? {
+        guard let storage = self.textStorage else {
+            print("No text storage, so no last line.")
+            return nil
+        }
+
+        // Shouldn't use paragraphs: str.split.reverse.first
+        // Or use a regex to find the range from \n to end of string
+        if let lastLine = storage.paragraphs.last {
+            let text = lastLine.string.replacingOccurrences(of: "$ ", with: "")
+                .replacingOccurrences(of: cursor, with: "")
+                .trimmingCharacters(in: CharacterSet.whitespaces)
+            return text.isEmpty ? nil : text
+        } else {
+            return nil
+        }
     }
 }
 
