@@ -21,7 +21,6 @@
 		53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D220F130F900E0BBDC /* PrefsViewController.swift */; };
 		53F722D720F13C4700E0BBDC /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D620F13C4700E0BBDC /* Log.swift */; };
 		53F722DA20F17A3900E0BBDC /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D920F17A3900E0BBDC /* Net.swift */; };
-		53F722DC20F1A1E600E0BBDC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722DB20F1A1E600E0BBDC /* String.swift */; };
 		DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEECF46420F8735600DB3083 /* TerminalTextView.swift */; };
 		DEECF46820F990D500DB3083 /* Syntax.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEECF46720F990D500DB3083 /* Syntax.swift */; };
 /* End PBXBuildFile section */
@@ -44,7 +43,6 @@
 		53F722D220F130F900E0BBDC /* PrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
 		53F722D620F13C4700E0BBDC /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		53F722D920F17A3900E0BBDC /* Net.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
-		53F722DB20F1A1E600E0BBDC /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		DEECF46420F8735600DB3083 /* TerminalTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTextView.swift; sourceTree = "<group>"; };
 		DEECF46720F990D500DB3083 /* Syntax.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Syntax.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -80,7 +78,6 @@
 			isa = PBXGroup;
 			children = (
 				5374A89320EB28770083CC15 /* AppDelegate.swift */,
-				53F722DF20F1A2E500E0BBDC /* Extensions */,
 				53F722D820F17A1B00E0BBDC /* Library */,
 				53F722CD20F12D3800E0BBDC /* Model */,
 				53F722D020F12FD300E0BBDC /* View */,
@@ -132,14 +129,6 @@
 				DEECF46720F990D500DB3083 /* Syntax.swift */,
 			);
 			path = Library;
-			sourceTree = "<group>";
-		};
-		53F722DF20F1A2E500E0BBDC /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				53F722DB20F1A1E600E0BBDC /* String.swift */,
-			);
-			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -227,7 +216,6 @@
 				53F722D720F13C4700E0BBDC /* Log.swift in Sources */,
 				539729DC20F6BBBB00D97205 /* Notify.swift in Sources */,
 				53F233B720F2FE3A00891128 /* SidebarViewController.swift in Sources */,
-				53F722DC20F1A1E600E0BBDC /* String.swift in Sources */,
 				53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */,
 				DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */,
 				53F233B320F2E4E200891128 /* Namespace.swift in Sources */,
