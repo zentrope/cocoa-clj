@@ -20,22 +20,23 @@ enum Handled {
 
 class TerminalTextView: NSTextView {
 
-    let paragraphSpacing = CGFloat(13.0 * 1.5)
-    let defaultFont = NSFont.userFixedPitchFont(ofSize: 11.0)
+    // MARK: - Instance data
+
+    let lineSpacing = CGFloat(4.0)
+    let defaultFont = NSFont.userFixedPitchFont(ofSize: 12.0)
 
     lazy var defaultStyle: NSMutableParagraphStyle = {
         let s = NSMutableParagraphStyle()
-        s.paragraphSpacing = paragraphSpacing
+        s.lineSpacing = lineSpacing
         s.lineBreakMode = NSLineBreakMode.byTruncatingTail
         return s
     }()
 
+    // MARK: - Superclass override
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-
-        // Drawing code here.
     }
-
 
     override init(frame: NSRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
@@ -83,6 +84,9 @@ class TerminalTextView: NSTextView {
         self.defaultParagraphStyle = defaultStyle
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
+        if let s = self.textStorage {
+            s.font = defaultFont
+        }
         self.clearBuffer()
         self.prompt()
     }
@@ -141,17 +145,14 @@ extension TerminalTextView {
 
     func paragraph(_ line: String) {
 
+        let source = NSMutableAttributedString(string: line)
+        Syntax.shared.highlight(source: source, withFont: defaultFont!)
+        source.addAttribute(.paragraphStyle, value: defaultStyle, range: NSMakeRange(0, source.length))
+
         guard let storage = self.textStorage else { return }
 
         storage.beginEditing()
-        let prefix = storage.string.count > 0 ? "\n" : ""
-        storage.mutableString.append(prefix + line)
-        storage.font = defaultFont
-        storage.foregroundColor = NSColor.textColor
-        let range = self.attributedString().length
-
-        storage.addAttribute(.paragraphStyle, value: defaultStyle, range: NSMakeRange(0, range))
-
+        storage.append(source)
         storage.endEditing()
 
         self.scrollToEndOfDocument(self)
@@ -203,18 +204,10 @@ extension TerminalTextView {
         guard let storage = self.textStorage else { return }
 
         storage.beginEditing()
-        storage.font = defaultFont
-        storage.foregroundColor = NSColor.textColor
-
         if attributedString().endsWithCursor() {
             storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
         }
-
         storage.mutableString.append(char)
-        let range = self.attributedString().length
-        storage.addAttribute(.paragraphStyle, value: defaultStyle, range: NSMakeRange(0, range))
-
-
         storage.endEditing()
 
         self.scrollToEndOfDocument(self)
@@ -222,7 +215,7 @@ extension TerminalTextView {
 
     func prompt() {
         removeCursor()
-        append("\n$ ")
+        append("\n\n$ ")
         appendCursor()
     }
 }
@@ -232,6 +225,8 @@ extension TerminalTextView {
 // where it is, insert characters in the right place,
 // and so on.
 
+// Better yet, place the actual cursor for the view,
+// if that's possible for an edit=false NSTextView
 let cursor = "█"
 let cursorSize = cursor.count
 

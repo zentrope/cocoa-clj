@@ -98,7 +98,7 @@ extension MainViewController: SourceDataReceiver {
 
     func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol) {
         outputView.clearBuffer()
-        outputView.paragraph(symbolSource.source.tighten())
+        outputView.paragraph(symbolSource.source)
         outputView.prompt()
     }
 
