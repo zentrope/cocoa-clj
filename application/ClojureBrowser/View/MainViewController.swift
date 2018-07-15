@@ -23,13 +23,17 @@ class MainViewController: NSViewController {
         self.terminal.termDelegate = self
         Log.info("Welcome")
 
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
         if let w = self.view.window {
             w.makeFirstResponder(terminal)
         } else {
             Log.info("Unable to make the terminal the first responder.")
         }
     }
-
+    
     override func viewWillDisappear() {
         super.viewWillDisappear()
         Notify.shared.unregister(receiver: self)
