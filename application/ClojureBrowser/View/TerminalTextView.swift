@@ -27,7 +27,6 @@ protocol TerminalTextViewDelegate {
 
 fileprivate let cursor = "█" // better to fmt a bg color
 fileprivate let cursorSize = cursor.count
-fileprivate let lineSpacing = CGFloat(4.0)
 
 class TerminalTextView: NSTextView {
 
@@ -40,13 +39,6 @@ class TerminalTextView: NSTextView {
             }
         }
     }
-
-    lazy var defaultStyle: NSMutableParagraphStyle = {
-        let s = NSMutableParagraphStyle()
-        s.lineSpacing = lineSpacing
-        return s
-    }()
-
 
     // MARK: - Superclass override
 
@@ -98,16 +90,11 @@ class TerminalTextView: NSTextView {
     }
 
     private func setup() {
-        Log.info("set up")
+        Log.info("TerminalTextView set up")
 
-        self.defaultParagraphStyle = defaultStyle
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
         clearBuffer()
-
-
-//        clearBuffer()
-//        prompt()
     }
 
     private func handleKeyDown(with theEvent: NSEvent) -> Handled {

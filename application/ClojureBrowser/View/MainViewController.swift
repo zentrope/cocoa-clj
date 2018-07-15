@@ -10,18 +10,6 @@ import Cocoa
 
 class MainViewController: NSViewController {
 
-    // MARK: - Instance data
-
-    let defaultFont = NSFont.userFixedPitchFont(ofSize: 13.0)!
-    let outputFont = NSFont.userFixedPitchFont(ofSize: 13.0)!
-    let lineSpacing = CGFloat(4.0)
-
-    lazy var defaultStyle: NSMutableParagraphStyle = {
-        let s = NSMutableParagraphStyle()
-        s.lineSpacing = lineSpacing
-        return s
-    }()
-
     // MARK: - Outlets
 
     @IBOutlet var terminal: TerminalTextView!
@@ -52,7 +40,7 @@ class MainViewController: NSViewController {
     func receiveEval(_ error: Error?, _ text: String?) {
         if let e = error {
             let msg = "error : \(e.localizedDescription) - \(Prefs().replUrl)"
-            terminal.display(pretty(msg, style: .error))
+            terminal.display(Style.apply(msg, style: .error))
             return
         }
 
@@ -61,61 +49,7 @@ class MainViewController: NSViewController {
         let packets = Nrepl.decode(t)
         let summary = Summary(packets)
 
-        terminal.display(pretty(result: summary))
-    }
-}
-
-// MARK: - Formatting concerns
-
-enum Style {
-    case banner
-    case clojure
-    case error
-    case output
-    case prompt
-    case standard
-}
-
-extension MainViewController {
-
-    func pretty(result: Summary) -> NSAttributedString {
-        let output = NSMutableAttributedString(string: "")
-
-        if let out = result.output {
-            output.append(pretty(out, style: .output))
-        }
-        if let err = result.err {
-            output.append(pretty(err, style: .error))
-        } else if let val = result.value {
-            let trimmed = val.trimmingCharacters(in: .whitespacesAndNewlines)
-            output.append(pretty(trimmed, style: .clojure))
-        }
-
-        return output
-    }
-
-    func pretty(_ string: String, style: Style) -> NSAttributedString {
-        let s = NSMutableAttributedString(string: string)
-        let r = NSMakeRange(0, s.length)
-        s.addAttribute(.paragraphStyle, value: defaultStyle, range: r)
-        s.addAttribute(.font, value: defaultFont, range: r)
-        s.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: r)
-
-        switch style {
-        case .clojure:
-            return Syntax.shared.highlight(source: string, withFont: outputFont)
-        case .standard:
-            s.addAttribute(.foregroundColor, value: NSColor.textColor, range: r)
-        case .error:
-            s.addAttribute(.foregroundColor, value: NSColor.systemRed, range: r)
-        case .output:
-            s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
-        case .prompt:
-            s.addAttribute(.foregroundColor, value: NSColor.systemPurple, range: r)
-        case .banner:
-            s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
-        }
-        return s
+        terminal.display(Style.apply(result: summary))
     }
 }
 
@@ -124,15 +58,15 @@ extension MainViewController {
 extension MainViewController: TerminalTextViewDelegate {
 
     func getBanner() -> NSAttributedString {
-        return pretty(";; Hello Clojure Browser\n", style: .banner)
+        return Style.apply(";; Hello Clojure Browser\n", style: .banner)
     }
 
     func getPrompt() -> NSAttributedString {
-        return pretty("$ ", style: .prompt)
+        return Style.apply("$ ", style: .prompt)
     }
 
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString {
-        return pretty(cmd, style: .clojure)
+        return Style.apply(cmd, style: .clojure)
     }
 
     func invokeCommand(cmd: String, sender: TerminalTextView) {
@@ -147,7 +81,7 @@ extension MainViewController: TerminalTextViewDelegate {
 extension MainViewController: SourceDataReceiver {
 
     func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
-        terminal.display(pretty(src.source, style: .clojure))
+        terminal.display(Style.apply(src.source, style: .clojure))
     }
 
 }

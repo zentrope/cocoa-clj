@@ -21,8 +21,8 @@
 		53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D220F130F900E0BBDC /* PrefsViewController.swift */; };
 		53F722D720F13C4700E0BBDC /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D620F13C4700E0BBDC /* Log.swift */; };
 		53F722DA20F17A3900E0BBDC /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D920F17A3900E0BBDC /* Net.swift */; };
+		DEE2C89520FB8C58000FF918 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE2C89420FB8C58000FF918 /* Style.swift */; };
 		DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEECF46420F8735600DB3083 /* TerminalTextView.swift */; };
-		DEECF46820F990D500DB3083 /* Syntax.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEECF46720F990D500DB3083 /* Syntax.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,8 +43,8 @@
 		53F722D220F130F900E0BBDC /* PrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
 		53F722D620F13C4700E0BBDC /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		53F722D920F17A3900E0BBDC /* Net.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
+		DEE2C89420FB8C58000FF918 /* Style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style.swift; sourceTree = "<group>"; };
 		DEECF46420F8735600DB3083 /* TerminalTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTextView.swift; sourceTree = "<group>"; };
-		DEECF46720F990D500DB3083 /* Syntax.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Syntax.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,7 +126,7 @@
 				53F722D620F13C4700E0BBDC /* Log.swift */,
 				53F722D920F17A3900E0BBDC /* Net.swift */,
 				539729DB20F6BBBB00D97205 /* Notify.swift */,
-				DEECF46720F990D500DB3083 /* Syntax.swift */,
+				DEE2C89420FB8C58000FF918 /* Style.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -211,6 +211,7 @@
 				5374A89620EB28770083CC15 /* MainViewController.swift in Sources */,
 				53ED6F2720F3F4A3001A756F /* MainWindowController.swift in Sources */,
 				53F722DA20F17A3900E0BBDC /* Net.swift in Sources */,
+				DEE2C89520FB8C58000FF918 /* Style.swift in Sources */,
 				53F233B120F2A12F00891128 /* Repl.swift in Sources */,
 				5374A89420EB28770083CC15 /* AppDelegate.swift in Sources */,
 				53F722D720F13C4700E0BBDC /* Log.swift in Sources */,
@@ -219,7 +220,6 @@
 				53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */,
 				DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */,
 				53F233B320F2E4E200891128 /* Namespace.swift in Sources */,
-				DEECF46820F990D500DB3083 /* Syntax.swift in Sources */,
 				53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
