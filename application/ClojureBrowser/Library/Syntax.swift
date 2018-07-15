@@ -65,6 +65,7 @@ class Syntax {
         let source = NSMutableAttributedString(string: original)
         let range = NSMakeRange(0, source.length)
         source.setAttributes(nil, range: range)
+        source.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
         source.addAttribute(.font, value: face, range: range)
 
         hints.forEach {
