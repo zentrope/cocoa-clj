@@ -19,28 +19,34 @@ enum Handled {
 }
 
 protocol TerminalTextViewDelegate {
-
     func getPrompt() -> NSAttributedString
+    func getBanner() -> NSAttributedString
     func invokeCommand(cmd: String, sender: TerminalTextView)
-    func styleCommand(cmd: NSMutableAttributedString, range: NSRange, sender: TerminalTextView)
-    // func styleOutput(...)
-
+    func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString
 }
+
+fileprivate let cursor = "█" // better to fmt a bg color
+fileprivate let cursorSize = cursor.count
+fileprivate let lineSpacing = CGFloat(4.0)
 
 class TerminalTextView: NSTextView {
 
     // MARK: - Instance data
 
-    var termDelegate: TerminalTextViewDelegate?
-
-    let lineSpacing = CGFloat(4.0)
-    let defaultFont = NSFont.userFixedPitchFont(ofSize: 12.0)
+    var termDelegate: TerminalTextViewDelegate? {
+        didSet {
+            if let b = termDelegate?.getBanner() {
+                display(b)
+            }
+        }
+    }
 
     lazy var defaultStyle: NSMutableParagraphStyle = {
         let s = NSMutableParagraphStyle()
         s.lineSpacing = lineSpacing
         return s
     }()
+
 
     // MARK: - Superclass override
 
@@ -72,6 +78,11 @@ class TerminalTextView: NSTextView {
 
     override func becomeFirstResponder() -> Bool {
         Log.info("terminal is becoming first responder")
+        if let storage = textStorage {
+            if storage.length < 1 {
+                prompt()
+            }
+        }
         self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             return self.handleKeyDown(with: $0) == .handled ? nil : $0
         }
@@ -92,11 +103,11 @@ class TerminalTextView: NSTextView {
         self.defaultParagraphStyle = defaultStyle
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
-        self.clearBuffer()
-        if let s = self.textStorage {
-            s.font = defaultFont
-        }
-        self.prompt()
+        clearBuffer()
+
+
+//        clearBuffer()
+//        prompt()
     }
 
     private func handleKeyDown(with theEvent: NSEvent) -> Handled {
@@ -137,7 +148,7 @@ class TerminalTextView: NSTextView {
             return .handled
         }
 
-        self.append(chs)
+        self.appendChars(chs)
         self.appendCursor()
         dispatchStyleCommand()
         return .handled
@@ -162,10 +173,11 @@ extension TerminalTextView {
     func dispatchStyleCommand() {
         guard let delegate = self.termDelegate else { return }
         guard let storage = self.textStorage else { return }
+        guard let cmd = lastLine() else { return }
         let cmdRange = self.cmdRange()
-        if !cmdRange.isEmpty {
-            delegate.styleCommand(cmd: storage, range: cmdRange, sender: self)
-        }
+
+        let s = delegate.styleCommand(cmd: cmd, sender: self)
+        storage.replaceCharacters(in: cmdRange, with: s)
     }
 
     func dispatchGetPrompt() -> NSAttributedString {
@@ -179,26 +191,24 @@ extension TerminalTextView {
 extension TerminalTextView {
 
     func clearBuffer() {
-        if let storage = self.textStorage {
-            storage.beginEditing()
-            storage.mutableString.setString("")
-            storage.endEditing()
-        }
+        guard let storage = self.textStorage else { return }
+        storage.beginEditing()
+        storage.mutableString.setString("")
+        storage.endEditing()
     }
 
-    func paragraph(_ line: String) {
-
-        let source = NSMutableAttributedString(string: line)
-        Syntax.shared.highlight(source: source, withFont: defaultFont!)
-        source.addAttribute(.paragraphStyle, value: defaultStyle, range: NSMakeRange(0, source.length))
-
+    func display(_ output: NSAttributedString) {
         guard let storage = self.textStorage else { return }
 
+        newline(number: 2)
+        removeCursor()
+
         storage.beginEditing()
-        storage.append(source)
+        storage.append(output)
         storage.endEditing()
 
-        self.scrollToEndOfDocument(self)
+        newline()
+        prompt()
     }
 
     // MARK: - Terminal functions
@@ -210,10 +220,13 @@ extension TerminalTextView {
 
     func appendCursor() {
         guard let storage = self.textStorage else { return }
+
+        // optimization: create the cursor once
+        let c = NSMutableAttributedString(string: cursor)
+        c.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: NSMakeRange(0, c.length))
+
         storage.beginEditing()
-        storage.mutableString.append(cursor)
-        let range = lastChar(storage.mutableString)
-        storage.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: range)
+        storage.append(c)
         storage.endEditing()
         self.scrollToEndOfDocument(self)
     }
@@ -221,11 +234,16 @@ extension TerminalTextView {
     func removeCursor() {
         if self.attributedString().length < cursorSize { return }
         guard let storage = self.textStorage else { return }
+
+
         storage.beginEditing()
-        if attributedString().endsWithCursor() {
+
+        if attributedString().string.hasSuffix(cursor) {
             storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
         }
+
         storage.endEditing()
+
         self.scrollToEndOfDocument(self)
     }
 
@@ -243,11 +261,11 @@ extension TerminalTextView {
         self.scrollToEndOfDocument(self)
     }
 
-    func append(_ char: String) {
+    func appendChars(_ char: String) {
         guard let storage = self.textStorage else { return }
 
         storage.beginEditing()
-        if attributedString().endsWithCursor() {
+        if attributedString().string.hasSuffix(cursor) {
             storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
         }
         storage.mutableString.append(char)
@@ -256,9 +274,9 @@ extension TerminalTextView {
         self.scrollToEndOfDocument(self)
     }
 
-    func newLine() {
+    func newline(number: Int = 1) {
         removeCursor()
-        append("\n")
+        appendChars(String(repeating: "\n", count: number))
         appendCursor()
     }
 
@@ -315,21 +333,4 @@ extension NSRange {
             return self.length == 0
         }
     }
-}
-// Cursor should be a block of color, not an actual
-// character appended to the buffer. Then we can track
-// where it is, insert characters in the right place,
-// and so on.
-
-// Better yet, place the actual cursor for the view,
-// if that's possible for an edit=false NSTextView
-let cursor = "█"
-let cursorSize = cursor.count
-
-extension NSAttributedString {
-
-    func endsWithCursor() -> Bool {
-        return string.hasSuffix(cursor)
-    }
-
 }

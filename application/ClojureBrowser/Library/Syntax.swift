@@ -60,23 +60,17 @@ class Syntax {
         }
     }
 
-    func highlight(source: NSMutableAttributedString, withFont face: NSFont) {
+    func highlight(source original: String, withFont face: NSFont) -> NSAttributedString {
 
-        let sourceRange = NSMakeRange(0, source.length)
-        source.setAttributes(nil, range: sourceRange)
-        source.addAttribute(.font, value: face, range: sourceRange)
-
-        hints.forEach {
-            apply(syntax: $0, to: source, range: sourceRange)
-        }
-    }
-
-    func highlight(source: NSMutableAttributedString, withFont face: NSFont, inRange range: NSRange) {
+        let source = NSMutableAttributedString(string: original)
+        let range = NSMakeRange(0, source.length)
         source.setAttributes(nil, range: range)
         source.addAttribute(.font, value: face, range: range)
 
         hints.forEach {
             apply(syntax: $0, to: source, range: range)
         }
+        return source
     }
+
 }

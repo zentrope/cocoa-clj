@@ -14,10 +14,17 @@ class MainViewController: NSViewController {
 
     let defaultFont = NSFont.userFixedPitchFont(ofSize: 13.0)!
     let outputFont = NSFont.userFixedPitchFont(ofSize: 13.0)!
+    let lineSpacing = CGFloat(4.0)
+
+    lazy var defaultStyle: NSMutableParagraphStyle = {
+        let s = NSMutableParagraphStyle()
+        s.lineSpacing = lineSpacing
+        return s
+    }()
 
     // MARK: - Outlets
 
-    @IBOutlet var outputView: TerminalTextView!
+    @IBOutlet var terminal: TerminalTextView!
 
     // MARK: - View Controller Overrides
 
@@ -25,8 +32,14 @@ class MainViewController: NSViewController {
         super.viewDidLoad()
 
         Notify.shared.register(receiver: self)
-        self.outputView.termDelegate = self
+        self.terminal.termDelegate = self
         Log.info("Welcome")
+
+        if let w = self.view.window {
+            w.makeFirstResponder(terminal)
+        } else {
+            Log.info("Unable to make the terminal the first responder.")
+        }
     }
 
     override func viewWillDisappear() {
@@ -36,64 +49,95 @@ class MainViewController: NSViewController {
 
     // MARK: - Evaluation
 
-    func sendForEval(expr: String) {
-        let prefs = Prefs()
-        let site = prefs.replUrl
-
-        Net.sendForEval(site: site, form: expr) { error, text in
-            if let e = error {
-                self.outputView.paragraph("error : \(e.localizedDescription) - \(site)")
-                return
-            }
-
-            guard let t = text else {
-                Log.error("no text available for \(site)")
-                return
-            }
-
-            let packets = Nrepl.decode(t)
-            let summary = Summary(packets)
-
-
-            var output = "";
-
-            if let out = summary.output {
-                output.append(out)
-            }
-
-            if let err = summary.err {
-                output.append(err)
-            } else if let val = summary.value {
-                output.append(val)
-            }
-
-            output = "\n\n" + output.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-
-            //print("out '\(output)'")
-            // TODO: outputview.showCommandOutput(output)
-            self.outputView.removeCursor()
-            self.outputView.paragraph(output)
-            self.outputView.newLine()
-            self.outputView.prompt()
+    func receiveEval(_ error: Error?, _ text: String?) {
+        if let e = error {
+            let msg = "error : \(e.localizedDescription) - \(Prefs().replUrl)"
+            terminal.display(pretty(msg, style: .error))
+            return
         }
+
+        guard let t = text else { return }
+
+        let packets = Nrepl.decode(t)
+        let summary = Summary(packets)
+
+        terminal.display(pretty(result: summary))
     }
 }
 
-// MARK: - Terminal View Delegate
+// MARK: - Formatting concerns
+
+enum Style {
+    case banner
+    case clojure
+    case error
+    case output
+    case prompt
+    case standard
+}
+
+extension MainViewController {
+
+    func pretty(result: Summary) -> NSAttributedString {
+        let output = NSMutableAttributedString(string: "")
+
+        if let out = result.output {
+            output.append(pretty(out, style: .output))
+        }
+        if let err = result.err {
+            output.append(pretty(err, style: .error))
+        } else if let val = result.value {
+            let trimmed = val.trimmingCharacters(in: .whitespacesAndNewlines)
+            output.append(pretty(trimmed, style: .clojure))
+        }
+
+        return output
+    }
+
+    func pretty(_ string: String, style: Style) -> NSAttributedString {
+        let s = NSMutableAttributedString(string: string)
+        let r = NSMakeRange(0, s.length)
+        s.addAttribute(.paragraphStyle, value: defaultStyle, range: r)
+        s.addAttribute(.font, value: defaultFont, range: r)
+        s.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: r)
+
+        switch style {
+        case .clojure:
+            return Syntax.shared.highlight(source: string, withFont: outputFont)
+        case .standard:
+            s.addAttribute(.foregroundColor, value: NSColor.textColor, range: r)
+        case .error:
+            s.addAttribute(.foregroundColor, value: NSColor.systemRed, range: r)
+        case .output:
+            s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
+        case .prompt:
+            s.addAttribute(.foregroundColor, value: NSColor.systemPurple, range: r)
+        case .banner:
+            s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
+        }
+        return s
+    }
+}
+
+// MARK: - Terminal delegate
 
 extension MainViewController: TerminalTextViewDelegate {
 
-    func getPrompt() -> NSAttributedString {
-        return NSAttributedString(string: "$ ")
+    func getBanner() -> NSAttributedString {
+        return pretty(";; Hello Clojure Browser\n", style: .banner)
     }
 
-    func styleCommand(cmd: NSMutableAttributedString, range: NSRange, sender: TerminalTextView) {
-        Syntax.shared.highlight(source: cmd, withFont: defaultFont, inRange: range)
+    func getPrompt() -> NSAttributedString {
+        return pretty("$ ", style: .prompt)
+    }
+
+    func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString {
+        return pretty(cmd, style: .clojure)
     }
 
     func invokeCommand(cmd: String, sender: TerminalTextView) {
         Log.info("eval this form? '\(cmd)'")
-        self.sendForEval(expr: cmd)
+        Net.sendForEval(site: Prefs().replUrl, form: cmd, self.receiveEval)
     }
 
 }
@@ -102,13 +146,8 @@ extension MainViewController: TerminalTextViewDelegate {
 
 extension MainViewController: SourceDataReceiver {
 
-
-    func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol) {
-        // TODO: outputview.showCommandOutput(output)
-        outputView.removeCursor()
-        outputView.paragraph(symbolSource.source)
-        outputView.newLine()
-        outputView.prompt()
+    func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
+        terminal.display(pretty(src.source, style: .clojure))
     }
 
 }
