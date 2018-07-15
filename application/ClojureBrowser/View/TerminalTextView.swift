@@ -8,16 +8,6 @@
 
 import Cocoa
 
-enum KeyCodes: Int {
-    case kcReturnKey = 36
-    case kcDeleteKey = 51
-}
-
-enum Handled {
-    case handled
-    case unhandled
-}
-
 protocol TerminalTextViewDelegate {
     func getPrompt() -> NSAttributedString
     func getBanner() -> NSAttributedString
@@ -33,6 +23,12 @@ fileprivate let cursorSize = cursor.count
 class TerminalTextView: NSTextView {
 
     var keyboardEventMonitor: Any? = nil
+
+    var cursorPosition: Int = 0 {
+        didSet {
+            print("cursor-position: \(cursorPosition)")
+        }
+    }
 
     var termDelegate: TerminalTextViewDelegate? {
         didSet {
@@ -64,7 +60,7 @@ class TerminalTextView: NSTextView {
     }
 
     override func becomeFirstResponder() -> Bool {
-        Log.info("terminal is becoming first responder")
+        Log.info("Terminal is active.")
         if let storage = textStorage {
             if storage.length < 1 {
                 prompt()
@@ -77,7 +73,7 @@ class TerminalTextView: NSTextView {
     }
 
     override func resignFirstResponder() -> Bool {
-        Log.info("terminal is resigning first responder")
+        Log.info("Terminal is inactive.")
         if let mon = self.keyboardEventMonitor {
             NSEvent.removeMonitor(mon)
         }
@@ -95,50 +91,36 @@ class TerminalTextView: NSTextView {
 
 extension TerminalTextView {
 
-    private func handleKeyDown(with theEvent: NSEvent) -> Handled {
+    private func handleKeyDown(with theEvent: NSEvent) -> KeyEventResult {
 
-        let chs = theEvent.characters ?? ""
-        let key = Int(theEvent.keyCode)
-        let flags = theEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let keyID = KeyID(event: theEvent)
 
-        // This is how you figure out what's what
-        if flags.contains(.command) { Log.info("COMMAND \(key)") }
-        if flags.contains(.option) { Log.info( "OPTION \(key)") }
-        if flags.contains(.control) { Log.info( "CONTROL \(key)") }
-        if flags.contains(.function) { Log.info( "FUNCTION \(key)") }
-
-        let modified = flags.contains(.command) || flags.contains(.option) ||
-            flags.contains(.control) || flags.contains(.function)
-
-        // Command-K clears the buffer
-        if flags.contains(.command) && (key == 40) {
+        switch keyID.op() {
+        case .enter:
+            dispatchInvokeCommand()
+        case .right:
+            print("right arrow")
+        case .left:
+            print("left arrow")
+        case .home:
+            print("home key")
+        case .end:
+            print("end key")
+        case .delete:
+            backspace()
+        case .clear:
             clearBuffer()
             prompt()
-            return .handled
-        }
-
-        // If we're not using a modified key, return it to
-        // the system so ⌘Q, ⌘, (and so on) works.
-        if modified {
+        case .unknown:
+            Log.info(keyID.describe())
             return .unhandled
+        case .value:
+            appendChars(keyID.chs)
+            appendCursor()
+            dispatchStyleCommand()
         }
-
-        if let code = KeyCodes(rawValue: key) {
-            switch code {
-            case .kcReturnKey:
-                dispatchInvokeCommand()
-            case .kcDeleteKey:
-                self.backspace()
-            }
-            return .handled
-        }
-
-        self.appendChars(chs)
-        self.appendCursor()
-        dispatchStyleCommand()
         return .handled
     }
-
 }
 
 // MARK: - Delegate dispatch commands
@@ -211,6 +193,7 @@ extension TerminalTextView {
         storage.beginEditing()
         storage.append(c)
         storage.endEditing()
+        cursorPosition = storage.string.count
         self.scrollToEndOfDocument(self)
     }
 
@@ -306,6 +289,109 @@ extension TerminalTextView {
             return nil
         }
         return storage.mutableString.substring(with: range)
+    }
+}
+
+// MARK: - Keyboard interpreter
+
+enum KeyEventResult {
+    case handled
+    case unhandled
+}
+
+enum KeyCodes: Int {
+    case kcReturnKey = 36
+    case kcLetterK = 40
+    case kcDeleteKey = 51
+    case kcRightArrow = 124
+    case kcLeftArrow = 123
+
+    static func match(_ key: KeyID, _ guess: KeyCodes, _ mods: NSEvent.ModifierFlags = []) -> Bool {
+        return key.key == guess.rawValue && key.flags.contains(mods)
+    }
+}
+
+enum KeyOp {
+    case enter
+    case right
+    case left
+    case home
+    case end
+    case delete
+    case clear
+    case unknown
+    case value
+}
+
+class KeyID {
+
+    var flags: NSEvent.ModifierFlags
+    var key: Int
+    var chs: String
+
+    init(event: NSEvent) {
+        chs = event.characters ?? ""
+        key = Int(event.keyCode)
+        flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    }
+
+    func op() -> KeyOp {
+        if endKey() { return KeyOp.end }
+        if homeKey() { return KeyOp.home }
+        if deleteKey() { return KeyOp.delete }
+        if returnKey() { return KeyOp.enter }
+        if clearKey() { return KeyOp.clear }
+        if leftKey() { return KeyOp.left }
+        if rightKey() { return KeyOp.right }
+        if modified() {
+            return KeyOp.unknown
+        }
+        return KeyOp.value
+    }
+
+    func describe() -> String {
+        var d = [String]()
+        if flags.contains(.command) { d.append("COMMAND")}
+        if flags.contains(.option) { d.append("OPTION")}
+        if flags.contains(.control) { d.append("CONTROL")}
+        if flags.contains(.function) { d.append("FUNCTION")}
+        d.append(String(key))
+        return d.joined(separator: "-")
+    }
+
+    private func modified() -> Bool {
+        return flags.contains(.command) ||
+            flags.contains(.option) ||
+            flags.contains(.control) ||
+            flags.contains(.function)
+    }
+
+    private func endKey() -> Bool {
+        return KeyCodes.match(self, .kcRightArrow, [.command, .function])
+    }
+
+    private func homeKey() -> Bool {
+        return KeyCodes.match(self, .kcLeftArrow, [.command, .function])
+    }
+
+    private func rightKey() -> Bool {
+        return KeyCodes.match(self, .kcRightArrow, [.function])
+    }
+
+    private func leftKey() -> Bool {
+        return KeyCodes.match(self, .kcLeftArrow, [.function])
+    }
+
+    private func clearKey() -> Bool {
+        return KeyCodes.match(self, .kcLetterK, [.command])
+    }
+
+    private func returnKey() -> Bool {
+        return KeyCodes.match(self, .kcReturnKey)
+    }
+
+    private func deleteKey() -> Bool {
+        return KeyCodes.match(self, .kcDeleteKey)
     }
 }
 

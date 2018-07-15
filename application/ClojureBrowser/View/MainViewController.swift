@@ -51,7 +51,7 @@ extension MainViewController: TerminalTextViewDelegate {
     }
 
     func invokeCommand(cmd: String, sender: TerminalTextView) {
-        Log.info("eval this form? '\(cmd)'")
+        Log.info("eval this form? `\(cmd)`")
         Net.sendForEval(site: Prefs().replUrl, form: cmd)
     }
 
