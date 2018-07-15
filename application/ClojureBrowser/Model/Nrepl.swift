@@ -35,6 +35,10 @@ struct Summary {
     var output: String?
     var err: String?
 
+    init(error: String) {
+        err = error
+    }
+
     init(_ packets: [NreplResponse]) {
         for packet in packets {
 

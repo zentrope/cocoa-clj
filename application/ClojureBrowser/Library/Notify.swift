@@ -20,6 +20,10 @@ protocol SymbolsDataReceiver: class {
     func receive(symbols: [CLJSymbol], forNamespace ns: CLJNameSpace)
 }
 
+protocol EvalDataReceiver: class {
+    func receive(summary: Summary)
+}
+
 class Notify {
 
     static var shared = Notify()
@@ -64,6 +68,13 @@ class Notify {
         withSync { c in
             guard let handler = c as? SymbolsDataReceiver else { return }
             DispatchQueue.main.async { handler.receive(symbols: syms, forNamespace: ns) }
+        }
+    }
+
+    func deliverEval(summary sum: Summary) {
+        withSync { c in
+            guard let handler = c as? EvalDataReceiver else { return }
+            DispatchQueue.main.async { handler.receive(summary: sum)}
         }
     }
 

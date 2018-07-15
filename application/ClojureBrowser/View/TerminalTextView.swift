@@ -28,9 +28,11 @@ protocol TerminalTextViewDelegate {
 fileprivate let cursor = "█" // better to fmt a bg color
 fileprivate let cursorSize = cursor.count
 
+// MARK: - Main
+
 class TerminalTextView: NSTextView {
 
-    // MARK: - Instance data
+    var keyboardEventMonitor: Any? = nil
 
     var termDelegate: TerminalTextViewDelegate? {
         didSet {
@@ -39,8 +41,6 @@ class TerminalTextView: NSTextView {
             }
         }
     }
-
-    // MARK: - Superclass override
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -58,11 +58,6 @@ class TerminalTextView: NSTextView {
         super.init(coder: coder)
         setup()
     }
-
-
-    // MARK: - Interaction management
-
-    var keyboardEventMonitor: Any? = nil
 
     override var acceptsFirstResponder: Bool {
         return true
@@ -90,12 +85,15 @@ class TerminalTextView: NSTextView {
     }
 
     private func setup() {
-        Log.info("TerminalTextView set up")
-
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
-
         clearBuffer()
     }
+
+}
+
+// MARK: - Keyboard interpreter
+
+extension TerminalTextView {
 
     private func handleKeyDown(with theEvent: NSEvent) -> Handled {
 
@@ -197,8 +195,6 @@ extension TerminalTextView {
         newline()
         prompt()
     }
-
-    // MARK: - Terminal functions
 
     func lastChar(_ string: NSMutableString) -> NSRange {
         let len = string.length
@@ -312,6 +308,8 @@ extension TerminalTextView {
         return storage.mutableString.substring(with: range)
     }
 }
+
+// MARK: - NSRange extension
 
 extension NSRange {
 

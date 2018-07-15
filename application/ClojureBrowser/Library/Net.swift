@@ -19,8 +19,20 @@ struct Net {
         invokeRequest(to: site, withBody: Repl.mkPing(), completion)
     }
 
-    static func sendForEval(site: String, form: String, _ completion: @escaping completionHandler) {
-        invokeRequest(to: site, withBody: Repl.mkEval(expr: form), completion)
+    static func sendForEval(site: String, form: String) {
+        invokeRequest(to: site, withBody: Repl.mkEval(expr: form)) { error, text in
+            if let e = error {
+                let msg = "error : \(e.localizedDescription) - \(Prefs().replUrl)"
+                Notify.shared.deliverEval(summary: Summary(error: msg))
+                return
+            }
+
+            guard let t = text else { return }
+
+            let packets = Nrepl.decode(t)
+            let summary = Summary(packets)
+            Notify.shared.deliverEval(summary: summary)
+        }
     }
 
     static func getNameSpaces(site: String) {
