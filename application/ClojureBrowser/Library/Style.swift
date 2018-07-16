@@ -77,7 +77,7 @@ struct Hint {
 }
 
 fileprivate let keywordHint = Hint("(?<=[(]).+?(?=[ ])",        NSColor.systemBlue)
-fileprivate let kwsHint     = Hint("[:]\\w+",                   NSColor.systemBrown)
+fileprivate let kwsHint     = Hint("[:]\\S+",                   NSColor.systemBrown)
 fileprivate let parensHint  = Hint("[()\\[\\]{}]",              NSColor.systemGray)
 fileprivate let dynamicHint = Hint("[*]\\S+[*]",                NSColor.systemRed)
 fileprivate let nsHint      = Hint("(?<=[(])([.]|\\w)+(?=[/])", NSColor.systemBrown)
