@@ -261,6 +261,7 @@ extension TerminalTextView {
     ///
     func display(_ output: NSAttributedString) {
         guard let storage = self.textStorage else { return }
+        cursorOff()
         newline()
         if (output.length > 0) {
             newline()
