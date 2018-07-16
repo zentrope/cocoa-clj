@@ -59,7 +59,7 @@ extension MainViewController: TerminalTextViewDelegate {
 
 // MARK: - Data delegates
 
-extension MainViewController: SourceDataReceiver, EvalDataReceiver {
+extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataReceiver {
 
     func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
         terminal.display(Style.apply(src.source, style: .clojure))
@@ -69,4 +69,8 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver {
         terminal.display(Style.apply(result: summary))
     }
 
+    func receive(error err: Error) {
+        let msg = Style.apply(err.localizedDescription, style: .error)
+        terminal.display(msg)
+    }
 }

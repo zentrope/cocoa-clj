@@ -21,11 +21,7 @@ struct Net {
 
     static func sendForEval(site: String, form: String) {
         invokeRequest(to: site, withBody: Repl.mkEval(expr: form)) { error, text in
-            if let e = error {
-                let msg = "error : \(e.localizedDescription) - \(Prefs().replUrl)"
-                Notify.shared.deliverEval(summary: Summary(error: msg))
-                return
-            }
+            if let e = error { Notify.shared.deliverError(error: e); return }
 
             guard let t = text else { return }
 
@@ -37,10 +33,7 @@ struct Net {
 
     static func getNameSpaces(site: String) {
         invokeRequest(to: site, withBody: Repl.mkGetNameSpaces()) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-                return
-            }
+            if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
                 let nss = Namespace.decodeNameSpace(jsonString: t)
@@ -51,10 +44,7 @@ struct Net {
 
     static func getSymbols(from: String, inNamespace ns: CLJNameSpace) {
         invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns)) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-                return
-            }
+            if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
                 let syms = Namespace.decodeSymbols(jsonString: t)
@@ -65,10 +55,7 @@ struct Net {
 
     static func getSource(from :String, forSymbol sym: CLJSymbol) {
         invokeRequest(to: from, withBody: Repl.mkGetSource(forSymbol: sym)) { error, text in
-            if let e = error {
-                Log.error(e.localizedDescription)
-                return
-            }
+            if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
                 let source = Namespace.decodeSource(jsonString: t)
@@ -77,13 +64,11 @@ struct Net {
         }
     }
 
-    // MARK: - Implementation and Convenience
+    // MARK: - Implementation and convenience
 
     private static func invokeRequest(to siteUrl: String, withBody payload: String, _ completion: completionHandler?) {
         let session = getSession()
-        guard let url = findUrl(site: siteUrl, completion) else {
-            return
-        }
+        guard let url = findUrl(site: siteUrl, completion) else { return }
         let request = mkPost(url: url, payload: payload)
         invokeTask(session: session, request: request, completion)
     }
@@ -104,9 +89,7 @@ struct Net {
 
     private static func findUrl(site: String, _ completion: completionHandler?) -> URL? {
         guard let url = URL(string: site) else {
-            DispatchQueue.main.async {
-                completion?(NetError(reason: "invalid url"), nil)
-            }
+            DispatchQueue.main.async { completion?(NetError(reason: "invalid url"), nil) }
             return nil
         }
         return url
@@ -116,16 +99,12 @@ struct Net {
         let task = session.dataTask(with: request) { data, response, error in
             defer { session.finishTasksAndInvalidate() }
             if error != nil {
-                DispatchQueue.main.async {
-                    completion?(error, nil)
-                }
+                DispatchQueue.main.async { completion?(error, nil) }
             }
 
             if let body = data,
                 let text = String(data: body, encoding: .utf8) {
-                DispatchQueue.main.async {
-                    completion?(nil, text)
-                }
+                DispatchQueue.main.async { completion?(nil, text) }
             }
         }
         task.resume()

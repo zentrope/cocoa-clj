@@ -24,6 +24,10 @@ protocol EvalDataReceiver: class {
     func receive(summary: Summary)
 }
 
+protocol ErrorDataReceiver: class {
+    func receive(error: Error)
+}
+
 class Notify {
 
     static var shared = Notify()
@@ -75,6 +79,14 @@ class Notify {
         withSync { c in
             guard let handler = c as? EvalDataReceiver else { return }
             DispatchQueue.main.async { handler.receive(summary: sum)}
+        }
+    }
+
+    func deliverError(error err: Error) {
+        Log.error(err.localizedDescription)
+        withSync { c in
+            guard let handler = c as? ErrorDataReceiver else { return }
+            DispatchQueue.main.async { handler.receive(error: err)}
         }
     }
 
