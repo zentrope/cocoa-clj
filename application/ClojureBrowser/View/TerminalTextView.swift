@@ -15,9 +15,6 @@ protocol TerminalTextViewDelegate {
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString
 }
 
-fileprivate let cursor = "█" // better to fmt a bg color
-fileprivate let cursorSize = cursor.count
-
 // MARK: - Main
 
 class TerminalTextView: NSTextView {
@@ -25,9 +22,8 @@ class TerminalTextView: NSTextView {
     var keyboardEventMonitor: Any? = nil
 
     var cursorPosition: Int = 0 {
-        didSet {
-            print("cursor-position: \(cursorPosition)")
-        }
+        willSet { cursorOff() }
+        didSet { cursorOn() }
     }
 
     var termDelegate: TerminalTextViewDelegate? {
@@ -82,181 +78,140 @@ class TerminalTextView: NSTextView {
 
     private func setup() {
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
-        clearBuffer()
+        clear()
     }
-
 }
 
-// MARK: - Keyboard interpreter
+// MARK: - Keyboard readline-ish
 
 extension TerminalTextView {
 
     private func handleKeyDown(with theEvent: NSEvent) -> KeyEventResult {
 
-        let keyID = KeyEvent(event: theEvent)
+        let keyEvent = KeyEvent(event: theEvent)
 
-        switch keyID.op() {
-        case .enter:
-            dispatchInvokeCommand()
-        case .right:
-            Log.info("right arrow")
-        case .left:
-            Log.info("left arrow")
-        case .up, .down:
-            Log.info("History not implemented.")
-        case .home:
-            Log.info("home key")
-        case .end:
-            Log.info("end key")
-        case .delete:
-            backspace()
-        case .clear:
-            clearBuffer()
-            prompt()
-        case .unknown:
-            Log.info(keyID.describe())
-            return .unhandled
-        case .value:
-            appendChars(keyID.chs)
-            appendCursor()
-            dispatchStyleCommand()
+        switch keyEvent.op() {
+
+        case .enter:   dispatchInvokeCommand()
+        case .right:   forwardChar()
+        case .left:    backwardChar()
+        case .home:    beginningOfLine()
+        case .end:     endOfLine()
+        case .delete:  backspace()
+        case .clear:   clear(); prompt()
+        case .value:   insert(keyEvent.chs); dispatchStyleCommand() ; cursorOn()
+
+        case .up:      Log.info("Back history not implemented.")
+        case .down:    Log.info("Forward history not implemented.")
+
+        case .cut:     Log.info("Cut not implemented.")
+        case .copy:    Log.info("Copy not implemented.")
+        case .paste:   Log.info("Paste not implemented.")
+
+        case .unknown: Log.info(keyEvent.describe()); return .unhandled
         }
         return .handled
     }
-}
 
-// MARK: - Delegate dispatch commands
+    enum CursorToggle {
+        case on, off
+    }
 
-extension TerminalTextView {
+    func toggleCursor(_ status: CursorToggle) {
+        let range = cmdRange()
+        if range.location == 0 { return }
 
-    func dispatchInvokeCommand() {
-        guard let delegate = self.termDelegate else { return }
+        let cursorRange = NSMakeRange(range.location + cursorPosition, 1)
 
-        if let form = lastLine() {
-            delegate.invokeCommand(cmd: form, sender: self)
-            return
+        // TODO: Handle cursor at end of line
+        switch status {
+
+        case .on:
+            super.setSelectedRange(cursorRange)
+
+        case .off:
+            super.setSelectedRange(NSMakeRange(0, 0))
         }
-        self.prompt()
     }
 
-    func dispatchStyleCommand() {
-        guard let delegate = self.termDelegate else { return }
-        guard let storage = self.textStorage else { return }
-        guard let cmd = lastLine() else { return }
-        let cmdRange = self.cmdRange()
-
-        let s = delegate.styleCommand(cmd: cmd, sender: self)
-        storage.replaceCharacters(in: cmdRange, with: s)
+    func cursorOn() {
+        toggleCursor(.on)
     }
 
-    func dispatchGetPrompt() -> NSAttributedString {
-        guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
-        return delegate.getPrompt()
-    }
-}
-
-// MARK: - Buffer management
-
-extension TerminalTextView {
-
-    func clearBuffer() {
-        guard let storage = self.textStorage else { return }
-        storage.beginEditing()
-        storage.mutableString.setString("")
-        storage.endEditing()
+    func cursorOff() {
+        toggleCursor(.off)
     }
 
-    func display(_ output: NSAttributedString) {
-        guard let storage = self.textStorage else { return }
-
-        newline(number: 2)
-        removeCursor()
-
-        storage.beginEditing()
-        storage.append(output)
-        storage.endEditing()
-
-        newline()
-        prompt()
+    func beginningOfLine() {
+        cursorPosition = 0
     }
 
-    func lastChar(_ string: NSMutableString) -> NSRange {
-        let len = string.length
-        return NSMakeRange(len - cursorSize, cursorSize)
-    }
-
-    func appendCursor() {
-        guard let storage = self.textStorage else { return }
-
-        // optimization: create the cursor once
-        let c = NSMutableAttributedString(string: cursor)
-        c.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: NSMakeRange(0, c.length))
-
-        storage.beginEditing()
-        storage.append(c)
-        storage.endEditing()
-        cursorPosition = storage.string.count
-        self.scrollToEndOfDocument(self)
-    }
-
-    func removeCursor() {
-        if self.attributedString().length < cursorSize { return }
-        guard let storage = self.textStorage else { return }
-
-
-        storage.beginEditing()
-
-        if attributedString().string.hasSuffix(cursor) {
-            storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
+    func endOfLine() {
+        if let line = lastLine() {
+            cursorPosition = line.count - 1
         }
+    }
 
-        storage.endEditing()
+    func backwardChar() {
+        if cursorPosition > 0 {
+            cursorPosition = cursorPosition - 1
+        }
+    }
 
-        self.scrollToEndOfDocument(self)
+    func forwardChar() {
+        let max = lastLine()?.count ?? 0
+        if cursorPosition < max {
+            cursorPosition = cursorPosition + 1
+        }
     }
 
     func backspace() {
-        removeCursor()
-
-        if self.attributedString().length < 1 { return }
-
-        guard let storage = self.textStorage else { return }
-        storage.beginEditing()
-        storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
-        storage.endEditing()
-
-        appendCursor()
-        self.scrollToEndOfDocument(self)
-    }
-
-    func appendChars(_ char: String) {
+        if cursorPosition == 0 { return }
         guard let storage = self.textStorage else { return }
 
-        storage.beginEditing()
-        if attributedString().string.hasSuffix(cursor) {
-            storage.mutableString.deleteCharacters(in: lastChar(storage.mutableString))
-        }
-        storage.mutableString.append(char)
-        storage.endEditing()
+        let range = cmdRange()
+        if range.location == 0 { return }
 
-        self.scrollToEndOfDocument(self)
+        let place = NSMakeRange(range.location + cursorPosition - 1, 1)
+        storage.deleteCharacters(in: place)
+        backwardChar()
     }
 
-    func newline(number: Int = 1) {
-        removeCursor()
-        appendChars(String(repeating: "\n", count: number))
-        appendCursor()
+    func insert(_ chars: String) {
+        guard let storage = self.textStorage else { return }
+        let range = cmdRange()
+        if range.location == 0 { return }
+
+        storage.insert(NSAttributedString(string: chars), at: range.location + cursorPosition)
+        cursorPosition = cursorPosition + chars.count
+    }
+
+    func clear() {
+        guard let storage = self.textStorage else { return }
+        storage.mutableString.setString("")
+        cursorPosition = 0
     }
 
     func prompt() {
         guard let storage = self.textStorage else { return }
-
-        removeCursor()
-        storage.beginEditing()
         storage.append(NSAttributedString(string: "\n"))
         storage.append(dispatchGetPrompt())
-        storage.endEditing()
-        appendCursor()
+        cursorPosition = 0
+        super.scrollToEndOfDocument(self)
+    }
+
+    func display(_ output: NSAttributedString) {
+        guard let storage = self.textStorage else { return }
+        newline(count: 2)
+        storage.append(output)
+        newline()
+        prompt()
+    }
+
+    func newline(count: Int = 1) {
+        guard let storage = self.textStorage else { return }
+        let lineEndings = String(repeating: "\n", count: count)
+        storage.append(NSAttributedString(string: lineEndings))
     }
 
     func cmdRange() -> NSRange {
@@ -272,7 +227,7 @@ extension TerminalTextView {
         do {
             let regex = try NSRegularExpression(pattern: cmdRangePattern, options: [])
             if let match = regex.firstMatch(in: data, options: [], range: range) {
-                return NSMakeRange(match.range.location + promptSize, match.range.length - promptSize - cursorSize)
+                return NSMakeRange(match.range.location + promptSize, match.range.length - promptSize)
             } else {
                 return empty
             }
@@ -294,83 +249,33 @@ extension TerminalTextView {
     }
 }
 
-// MARK: - Keyboard interpreter
+// MARK: - Delegate dispatch commands
 
-enum KeyEventResult {
-    case handled
-    case unhandled
-}
+extension TerminalTextView {
 
-enum KeyOp {
-    case enter, right, left, up, down, home, end, delete, clear, unknown, value
-}
+    func dispatchInvokeCommand() {
+        guard let delegate = self.termDelegate else { return }
 
-class KeyEvent {
-
-    let kcLetterA    =   0
-    let kcLetterE    =  14
-    let kcReturnKey  =  36
-    let kcLetterK    =  40
-    let kcDeleteKey  =  51
-    let kcLeftArrow  = 123
-    let kcRightArrow = 124
-    let kcDownArrow  = 125
-    let kcUpArrow    = 126
-
-    var flags: NSEvent.ModifierFlags
-    var key: Int
-    var chs: String
-    var event: NSEvent
-
-    init(event theEvent: NSEvent) {
-        event = theEvent
-        chs = theEvent.characters ?? ""
-        key = Int(theEvent.keyCode)
-        flags = theEvent.modifierFlags.intersection([.command, .control, .function, .option])
-    }
-
-    func op() -> KeyOp {
-        switch (key, flags) {
-        case (kcReturnKey, let mods) where mods.isEmpty:
-            return .enter
-        case (kcRightArrow, let mods) where mods == [.command, .function]:
-            return .end
-        case (kcLetterE, let mods) where mods == [.control]:
-            return .end
-        case (kcLeftArrow, let mods) where mods == [.command, .function]:
-            return .home
-        case (kcLetterA, let mods) where mods == [.control]:
-            return .home
-        case (kcRightArrow, let mods) where mods == [.function]:
-            return .right
-        case (kcLeftArrow, let mods) where mods == [.function]:
-            return .left
-        case (kcUpArrow, let mods) where mods == [.function]:
-            return .up
-        case (kcDownArrow, let mods) where mods == [.function]:
-            return .down
-        case (kcLetterK, let mods) where mods == [.command]:
-            return .clear
-        case (kcDeleteKey, let mods) where mods.isEmpty:
-            return .delete
-        default:
-            if flags.isEmpty { return .value }
-            return .unknown
+        if let form = lastLine() {
+            delegate.invokeCommand(cmd: form, sender: self)
+            return
         }
+        prompt()
     }
 
-    func describe() -> String {
-        return describe(self.flags)
+    func dispatchStyleCommand() {
+        guard let delegate = self.termDelegate else { return }
+        guard let storage = self.textStorage else { return }
+        guard let cmd = lastLine() else { return }
+        let cmdRange = self.cmdRange()
+
+        let s = delegate.styleCommand(cmd: cmd, sender: self)
+        storage.replaceCharacters(in: cmdRange, with: s)
     }
 
-    func describe(_ flags: NSEvent.ModifierFlags) -> String {
-        var d = [String]()
-        if flags.contains(.command) { d.append("⌘")}
-        if flags.contains(.option) { d.append("⌥")}
-        if flags.contains(.control) { d.append("⌃")}
-        if flags.contains(.function) { d.append("fn")}
-        d.append(String(key))
-        return d.joined(separator: "-")
+    func dispatchGetPrompt() -> NSAttributedString {
+        guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
+        return delegate.getPrompt()
     }
 }
 
