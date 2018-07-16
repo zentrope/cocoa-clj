@@ -281,8 +281,10 @@ extension TerminalTextView {
 
         if let cmd = lastLine() {
             let form = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
-            delegate.invokeCommand(cmd: form, sender: self)
-            return
+            if !form.isEmpty {
+                delegate.invokeCommand(cmd: form, sender: self)
+                return
+            }
         }
         prompt()
     }
