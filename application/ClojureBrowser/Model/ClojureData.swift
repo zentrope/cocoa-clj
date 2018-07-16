@@ -1,5 +1,5 @@
 //
-//  Namespace.swift
+//  ClojureData.swift
 //  ClojureBrowser
 //
 //  Created by Keith Irwin on 7/8/18.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Namespace {
+struct ClojureData {
 
     static func decodeNameSpace(jsonString: String) -> [CLJNameSpace] {
         let jsonData = jsonString.data(using: .utf8)!

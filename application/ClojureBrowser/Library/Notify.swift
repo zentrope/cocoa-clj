@@ -21,7 +21,7 @@ protocol SymbolsDataReceiver: class {
 }
 
 protocol EvalDataReceiver: class {
-    func receive(summary: Summary)
+    func receive(response: ReplResponse)
 }
 
 protocol ErrorDataReceiver: class {
@@ -75,10 +75,10 @@ class Notify {
         }
     }
 
-    func deliverEval(summary sum: Summary) {
+    func deliverEval(summary sum: ReplResponse) {
         withSync { c in
             guard let handler = c as? EvalDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(summary: sum)}
+            DispatchQueue.main.async { handler.receive(response: sum)}
         }
     }
 

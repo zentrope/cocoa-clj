@@ -16,49 +16,49 @@ struct Net {
     // MARK: - API
 
     static func testConnection(with site: String, _ completion: @escaping completionHandler) {
-        invokeRequest(to: site, withBody: Repl.mkPing(), completion)
+        invokeRequest(to: site, withBody: ReplRequest.ping(), completion)
     }
 
     static func sendForEval(site: String, form: String) {
-        invokeRequest(to: site, withBody: Repl.mkEval(expr: form)) { error, text in
+        invokeRequest(to: site, withBody: ReplRequest.eval(expr: form)) { error, text in
             if let e = error { Notify.shared.deliverError(error: e); return }
 
             guard let t = text else { return }
 
-            let packets = Nrepl.decode(t)
-            let summary = Summary(packets)
+            let packets = ReplResponse.decode(t)
+            let summary = ReplResponse(packets)
             Notify.shared.deliverEval(summary: summary)
         }
     }
 
     static func getNameSpaces(site: String) {
-        invokeRequest(to: site, withBody: Repl.mkGetNameSpaces()) { error, text in
+        invokeRequest(to: site, withBody: ReplRequest.getNameSpaces()) { error, text in
             if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
-                let nss = Namespace.decodeNameSpace(jsonString: t)
+                let nss = ClojureData.decodeNameSpace(jsonString: t)
                 Notify.shared.deliverNamespaces(namespaces: nss)
             }
         }
     }
 
     static func getSymbols(from: String, inNamespace ns: CLJNameSpace) {
-        invokeRequest(to: from, withBody: Repl.mkGetSymbols(inNs: ns)) { error, text in
+        invokeRequest(to: from, withBody: ReplRequest.getSymbols(inNs: ns)) { error, text in
             if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
-                let syms = Namespace.decodeSymbols(jsonString: t)
+                let syms = ClojureData.decodeSymbols(jsonString: t)
                 Notify.shared.deliverSymbols(symbols: syms, inNamespace: ns)
             }
         }
     }
 
     static func getSource(from :String, forSymbol sym: CLJSymbol) {
-        invokeRequest(to: from, withBody: Repl.mkGetSource(forSymbol: sym)) { error, text in
+        invokeRequest(to: from, withBody: ReplRequest.getSource(forSymbol: sym)) { error, text in
             if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
-                let source = Namespace.decodeSource(jsonString: t)
+                let source = ClojureData.decodeSource(jsonString: t)
                 Notify.shared.deliverSource(source: source, forSymbol: sym)
             }
         }

@@ -12,10 +12,10 @@
 		5374A89820EB28780083CC15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5374A89720EB28780083CC15 /* Assets.xcassets */; };
 		5374A89B20EB28780083CC15 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5374A89920EB28780083CC15 /* Main.storyboard */; };
 		539729DC20F6BBBB00D97205 /* Notify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 539729DB20F6BBBB00D97205 /* Notify.swift */; };
-		53B5366120F1EC2100661A23 /* Nrepl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53B5366020F1EC2100661A23 /* Nrepl.swift */; };
+		53B5366120F1EC2100661A23 /* ReplResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53B5366020F1EC2100661A23 /* ReplResponse.swift */; };
 		53ED6F2720F3F4A3001A756F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53ED6F2620F3F4A3001A756F /* MainWindowController.swift */; };
-		53F233B120F2A12F00891128 /* Repl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B020F2A12F00891128 /* Repl.swift */; };
-		53F233B320F2E4E200891128 /* Namespace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B220F2E4E200891128 /* Namespace.swift */; };
+		53F233B120F2A12F00891128 /* ReplRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B020F2A12F00891128 /* ReplRequest.swift */; };
+		53F233B320F2E4E200891128 /* ClojureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B220F2E4E200891128 /* ClojureData.swift */; };
 		53F233B720F2FE3A00891128 /* SidebarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F233B620F2FE3A00891128 /* SidebarViewController.swift */; };
 		53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722CE20F12D6200E0BBDC /* Prefs.swift */; };
 		53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D220F130F900E0BBDC /* PrefsViewController.swift */; };
@@ -35,10 +35,10 @@
 		5374A89C20EB28780083CC15 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5374A89D20EB28780083CC15 /* ClojureBrowser.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClojureBrowser.entitlements; sourceTree = "<group>"; };
 		539729DB20F6BBBB00D97205 /* Notify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notify.swift; sourceTree = "<group>"; };
-		53B5366020F1EC2100661A23 /* Nrepl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nrepl.swift; sourceTree = "<group>"; };
+		53B5366020F1EC2100661A23 /* ReplResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplResponse.swift; sourceTree = "<group>"; };
 		53ED6F2620F3F4A3001A756F /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
-		53F233B020F2A12F00891128 /* Repl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repl.swift; sourceTree = "<group>"; };
-		53F233B220F2E4E200891128 /* Namespace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Namespace.swift; sourceTree = "<group>"; };
+		53F233B020F2A12F00891128 /* ReplRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplRequest.swift; sourceTree = "<group>"; };
+		53F233B220F2E4E200891128 /* ClojureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClojureData.swift; sourceTree = "<group>"; };
 		53F233B620F2FE3A00891128 /* SidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarViewController.swift; sourceTree = "<group>"; };
 		53F722CE20F12D6200E0BBDC /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		53F722D220F130F900E0BBDC /* PrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
@@ -92,9 +92,9 @@
 			isa = PBXGroup;
 			children = (
 				53F722CE20F12D6200E0BBDC /* Prefs.swift */,
-				53B5366020F1EC2100661A23 /* Nrepl.swift */,
-				53F233B020F2A12F00891128 /* Repl.swift */,
-				53F233B220F2E4E200891128 /* Namespace.swift */,
+				53B5366020F1EC2100661A23 /* ReplResponse.swift */,
+				53F233B020F2A12F00891128 /* ReplRequest.swift */,
+				53F233B220F2E4E200891128 /* ClojureData.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -210,12 +210,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				53B5366120F1EC2100661A23 /* Nrepl.swift in Sources */,
+				53B5366120F1EC2100661A23 /* ReplResponse.swift in Sources */,
 				5374A89620EB28770083CC15 /* MainViewController.swift in Sources */,
 				53ED6F2720F3F4A3001A756F /* MainWindowController.swift in Sources */,
 				53F722DA20F17A3900E0BBDC /* Net.swift in Sources */,
 				DEE2C89520FB8C58000FF918 /* Style.swift in Sources */,
-				53F233B120F2A12F00891128 /* Repl.swift in Sources */,
+				53F233B120F2A12F00891128 /* ReplRequest.swift in Sources */,
 				5374A89420EB28770083CC15 /* AppDelegate.swift in Sources */,
 				DE52C03C20FC2E8000A830D5 /* Keyboard.swift in Sources */,
 				53F722D720F13C4700E0BBDC /* Log.swift in Sources */,
@@ -223,7 +223,7 @@
 				53F233B720F2FE3A00891128 /* SidebarViewController.swift in Sources */,
 				53F722CF20F12D6200E0BBDC /* Prefs.swift in Sources */,
 				DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */,
-				53F233B320F2E4E200891128 /* Namespace.swift in Sources */,
+				53F233B320F2E4E200891128 /* ClojureData.swift in Sources */,
 				53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

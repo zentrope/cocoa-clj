@@ -23,7 +23,7 @@ enum StyleMode {
 
 struct Style {
 
-    static func apply(result: Summary) -> NSAttributedString {
+    static func apply(result: ReplResponse) -> NSAttributedString {
         let output = NSMutableAttributedString(string: "")
 
         if let out = result.output {

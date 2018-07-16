@@ -65,8 +65,8 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataRec
         terminal.display(Style.apply(src.source, style: .clojure))
     }
 
-    func receive(summary: Summary) {
-        terminal.display(Style.apply(result: summary))
+    func receive(response: ReplResponse) {
+        terminal.display(Style.apply(result: response))
     }
 
     func receive(error err: Error) {

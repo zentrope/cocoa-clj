@@ -1,5 +1,5 @@
 //
-//  Nrepl.swift
+//  ReplResponse.swift
 //  ClojureBrowser
 //
 //  Created by Keith Irwin on 7/7/18.
@@ -8,27 +8,7 @@
 
 import Foundation
 
-struct Nrepl {
-
-    static func decode(_ jsonString: String) -> [NreplResponse] {
-
-        let jsonData = jsonString.data(using: .utf8)!
-        let decoder = JSONDecoder()
-
-        do {
-            let packets = try decoder.decode([NreplResponse].self, from: jsonData)
-            return packets
-        }
-
-        catch let error {
-            Log.error("data \(jsonString)")
-            Log.error(error.localizedDescription)
-            return [NreplResponse]()
-        }
-    }
-}
-
-struct Summary {
+struct ReplResponse {
 
     var value: String?
     var ns: String?
@@ -39,7 +19,7 @@ struct Summary {
         err = error
     }
 
-    init(_ packets: [NreplResponse]) {
+    init(_ packets: [ResponseData]) {
         for packet in packets {
 
             if let out = packet.out {
@@ -51,9 +31,26 @@ struct Summary {
             err = packet.err ?? err
         }
     }
+
+    static func decode(_ jsonString: String) -> [ResponseData] {
+
+        let jsonData = jsonString.data(using: .utf8)!
+        let decoder = JSONDecoder()
+
+        do {
+            let packets = try decoder.decode([ResponseData].self, from: jsonData)
+            return packets
+        }
+
+        catch let error {
+            Log.error("data \(jsonString)")
+            Log.error(error.localizedDescription)
+            return [ResponseData]()
+        }
+    }
 }
 
-struct NreplResponse : Codable {
+struct ResponseData : Codable {
 
     enum DecodingKeys : String {
         case rootEx = "root-ex"
