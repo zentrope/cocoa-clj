@@ -10,7 +10,7 @@ import Cocoa
 
 // MARK: - Style application
 
-fileprivate let defaultFont = NSFont.userFixedPitchFont(ofSize: 11.0)!
+fileprivate let defaultFont = NSFont.userFixedPitchFont(ofSize: 12.0)!
 
 enum StyleMode {
     case banner
