@@ -93,19 +93,21 @@ extension TerminalTextView {
 
     private func handleKeyDown(with theEvent: NSEvent) -> KeyEventResult {
 
-        let keyID = KeyID(event: theEvent)
+        let keyID = KeyEvent(event: theEvent)
 
         switch keyID.op() {
         case .enter:
             dispatchInvokeCommand()
         case .right:
-            print("right arrow")
+            Log.info("right arrow")
         case .left:
-            print("left arrow")
+            Log.info("left arrow")
+        case .up, .down:
+            Log.info("History not implemented.")
         case .home:
-            print("home key")
+            Log.info("home key")
         case .end:
-            print("end key")
+            Log.info("end key")
         case .delete:
             backspace()
         case .clear:
@@ -299,99 +301,76 @@ enum KeyEventResult {
     case unhandled
 }
 
-enum KeyCodes: Int {
-    case kcReturnKey = 36
-    case kcLetterK = 40
-    case kcDeleteKey = 51
-    case kcRightArrow = 124
-    case kcLeftArrow = 123
-
-    static func match(_ key: KeyID, _ guess: KeyCodes, _ mods: NSEvent.ModifierFlags = []) -> Bool {
-        return key.key == guess.rawValue && key.flags.contains(mods)
-    }
-}
-
 enum KeyOp {
-    case enter
-    case right
-    case left
-    case home
-    case end
-    case delete
-    case clear
-    case unknown
-    case value
+    case enter, right, left, up, down, home, end, delete, clear, unknown, value
 }
 
-class KeyID {
+class KeyEvent {
+
+    let kcLetterA    =   0
+    let kcLetterE    =  14
+    let kcReturnKey  =  36
+    let kcLetterK    =  40
+    let kcDeleteKey  =  51
+    let kcLeftArrow  = 123
+    let kcRightArrow = 124
+    let kcDownArrow  = 125
+    let kcUpArrow    = 126
 
     var flags: NSEvent.ModifierFlags
     var key: Int
     var chs: String
+    var event: NSEvent
 
-    init(event: NSEvent) {
-        chs = event.characters ?? ""
-        key = Int(event.keyCode)
-        flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+    init(event theEvent: NSEvent) {
+        event = theEvent
+        chs = theEvent.characters ?? ""
+        key = Int(theEvent.keyCode)
+        flags = theEvent.modifierFlags.intersection([.command, .control, .function, .option])
     }
 
     func op() -> KeyOp {
-        if endKey() { return KeyOp.end }
-        if homeKey() { return KeyOp.home }
-        if deleteKey() { return KeyOp.delete }
-        if returnKey() { return KeyOp.enter }
-        if clearKey() { return KeyOp.clear }
-        if leftKey() { return KeyOp.left }
-        if rightKey() { return KeyOp.right }
-        if modified() {
-            return KeyOp.unknown
+        switch (key, flags) {
+        case (kcReturnKey, let mods) where mods.isEmpty:
+            return .enter
+        case (kcRightArrow, let mods) where mods == [.command, .function]:
+            return .end
+        case (kcLetterE, let mods) where mods == [.control]:
+            return .end
+        case (kcLeftArrow, let mods) where mods == [.command, .function]:
+            return .home
+        case (kcLetterA, let mods) where mods == [.control]:
+            return .home
+        case (kcRightArrow, let mods) where mods == [.function]:
+            return .right
+        case (kcLeftArrow, let mods) where mods == [.function]:
+            return .left
+        case (kcUpArrow, let mods) where mods == [.function]:
+            return .up
+        case (kcDownArrow, let mods) where mods == [.function]:
+            return .down
+        case (kcLetterK, let mods) where mods == [.command]:
+            return .clear
+        case (kcDeleteKey, let mods) where mods.isEmpty:
+            return .delete
+        default:
+            if flags.isEmpty { return .value }
+            return .unknown
         }
-        return KeyOp.value
     }
 
     func describe() -> String {
+        return describe(self.flags)
+    }
+
+    func describe(_ flags: NSEvent.ModifierFlags) -> String {
         var d = [String]()
-        if flags.contains(.command) { d.append("COMMAND")}
-        if flags.contains(.option) { d.append("OPTION")}
-        if flags.contains(.control) { d.append("CONTROL")}
-        if flags.contains(.function) { d.append("FUNCTION")}
+        if flags.contains(.command) { d.append("⌘")}
+        if flags.contains(.option) { d.append("⌥")}
+        if flags.contains(.control) { d.append("⌃")}
+        if flags.contains(.function) { d.append("fn")}
         d.append(String(key))
         return d.joined(separator: "-")
-    }
-
-    private func modified() -> Bool {
-        return flags.contains(.command) ||
-            flags.contains(.option) ||
-            flags.contains(.control) ||
-            flags.contains(.function)
-    }
-
-    private func endKey() -> Bool {
-        return KeyCodes.match(self, .kcRightArrow, [.command, .function])
-    }
-
-    private func homeKey() -> Bool {
-        return KeyCodes.match(self, .kcLeftArrow, [.command, .function])
-    }
-
-    private func rightKey() -> Bool {
-        return KeyCodes.match(self, .kcRightArrow, [.function])
-    }
-
-    private func leftKey() -> Bool {
-        return KeyCodes.match(self, .kcLeftArrow, [.function])
-    }
-
-    private func clearKey() -> Bool {
-        return KeyCodes.match(self, .kcLetterK, [.command])
-    }
-
-    private func returnKey() -> Bool {
-        return KeyCodes.match(self, .kcReturnKey)
-    }
-
-    private func deleteKey() -> Bool {
-        return KeyCodes.match(self, .kcDeleteKey)
     }
 }
 
