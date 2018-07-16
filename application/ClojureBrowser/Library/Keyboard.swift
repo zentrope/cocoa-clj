@@ -17,7 +17,7 @@ enum KeyOp {
     case enter, right, left, up, down, home, end, delete, clear, cut, copy, paste, unknown, value
 }
 
-class KeyEvent {
+struct KeyEvent {
 
     let kcLetterA    =   0
     let kcLetterX    =   7
