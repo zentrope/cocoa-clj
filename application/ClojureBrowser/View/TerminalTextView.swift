@@ -205,6 +205,8 @@ extension TerminalTextView {
         storage.append(dispatchGetPrompt())
         storage.append(NSAttributedString(string: " "))
         cursorPosition = 0
+        dispatchStyleCommand()
+        cursorOn()
         super.scrollToEndOfDocument(self)
     }
 
