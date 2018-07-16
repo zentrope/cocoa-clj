@@ -48,7 +48,8 @@ class TerminalTextView: NSTextView {
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        setup()
+        self.textContainerInset = NSSize(width: 10.0, height: 10.0)
+        clear()
     }
 
     override var acceptsFirstResponder: Bool {
@@ -75,11 +76,6 @@ class TerminalTextView: NSTextView {
         }
         return true
     }
-
-    private func setup() {
-        self.textContainerInset = NSSize(width: 10.0, height: 10.0)
-        clear()
-    }
 }
 
 // MARK: - Keyboard readline-ish
@@ -92,7 +88,7 @@ extension TerminalTextView {
 
         switch keyEvent.op() {
 
-        case .enter:   dispatchInvokeCommand()
+        case .enter:   enter()
         case .right:   forwardChar()
         case .left:    backwardChar()
         case .home:    beginningOfLine()
@@ -109,63 +105,73 @@ extension TerminalTextView {
         case .paste:   Log.info("Paste not implemented.")
 
         case .unknown: Log.info(keyEvent.describe()); return .unhandled
+
         }
         return .handled
     }
 
-    enum CursorToggle {
+    private enum CursorToggle {
         case on, off
     }
 
-    func toggleCursor(_ status: CursorToggle) {
+    private func toggleCursor(_ status: CursorToggle) {
         let range = cmdRange()
+        guard let storage = textStorage else { return }
+
         if range.location == 0 { return }
-
         let cursorRange = NSMakeRange(range.location + cursorPosition, 1)
+        if (cursorRange.location >= storage.length) { return }
 
-        // TODO: Handle cursor at end of line
+        // Use attributes (instead of selection) to avoid trashing
+        // it if user selects something in the buffer.
+
         switch status {
 
         case .on:
-            super.setSelectedRange(cursorRange)
+            storage.addAttribute(.backgroundColor, value: NSColor.selectedTextBackgroundColor, range: cursorRange)
 
         case .off:
-            super.setSelectedRange(NSMakeRange(0, 0))
+            storage.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: cursorRange)
         }
     }
 
-    func cursorOn() {
+    private func cursorOn() {
         toggleCursor(.on)
     }
 
-    func cursorOff() {
+    private func cursorOff() {
         toggleCursor(.off)
     }
 
-    func beginningOfLine() {
+    private func enter() {
+        cursorOff()
+        dispatchInvokeCommand()
+    }
+
+    private func beginningOfLine() {
         cursorPosition = 0
     }
 
-    func endOfLine() {
+    private func endOfLine() {
         if let line = lastLine() {
             cursorPosition = line.count - 1
         }
     }
 
-    func backwardChar() {
+    private func backwardChar() {
         if cursorPosition > 0 {
             cursorPosition = cursorPosition - 1
         }
     }
 
-    func forwardChar() {
+    private func forwardChar() {
         let max = lastLine()?.count ?? 0
-        if cursorPosition < max {
+        if cursorPosition < (max - 1) {
             cursorPosition = cursorPosition + 1
         }
     }
 
-    func backspace() {
+    private func backspace() {
         if cursorPosition == 0 { return }
         guard let storage = self.textStorage else { return }
 
@@ -173,11 +179,12 @@ extension TerminalTextView {
         if range.location == 0 { return }
 
         let place = NSMakeRange(range.location + cursorPosition - 1, 1)
+
         storage.deleteCharacters(in: place)
         backwardChar()
     }
 
-    func insert(_ chars: String) {
+    private func insert(_ chars: String) {
         guard let storage = self.textStorage else { return }
         let range = cmdRange()
         if range.location == 0 { return }
@@ -186,35 +193,28 @@ extension TerminalTextView {
         cursorPosition = cursorPosition + chars.count
     }
 
-    func clear() {
+    private func clear() {
         guard let storage = self.textStorage else { return }
         storage.mutableString.setString("")
         cursorPosition = 0
     }
 
-    func prompt() {
+    private func prompt() {
         guard let storage = self.textStorage else { return }
         storage.append(NSAttributedString(string: "\n"))
         storage.append(dispatchGetPrompt())
+        storage.append(NSAttributedString(string: " "))
         cursorPosition = 0
         super.scrollToEndOfDocument(self)
     }
 
-    func display(_ output: NSAttributedString) {
-        guard let storage = self.textStorage else { return }
-        newline(count: 2)
-        storage.append(output)
-        newline()
-        prompt()
-    }
-
-    func newline(count: Int = 1) {
+    private func newline(count: Int = 1) {
         guard let storage = self.textStorage else { return }
         let lineEndings = String(repeating: "\n", count: count)
         storage.append(NSAttributedString(string: lineEndings))
     }
 
-    func cmdRange() -> NSRange {
+    private func cmdRange() -> NSRange {
         let empty = NSMakeRange(0, 0)
         guard let storage = self.textStorage else { return empty }
         let data = storage.string
@@ -239,53 +239,65 @@ extension TerminalTextView {
         }
     }
 
-    func lastLine() -> String? {
+    private func lastLine() -> String? {
         guard let storage = self.textStorage else { return nil }
         let range = cmdRange()
-        if range.isEmpty {
+        if range.length == 0 {
             return nil
         }
         return storage.mutableString.substring(with: range)
     }
 }
 
+// MARK: - Public API
+
+extension TerminalTextView {
+
+    /// Output the string to the buffer (as if the result of
+    /// the previous command).
+    ///
+    /// - Parameters:
+    ///     - output: The syntax highlighted string to display
+    ///
+    func display(_ output: NSAttributedString) {
+        guard let storage = self.textStorage else { return }
+        newline()
+        if (output.length > 0) {
+            newline()
+            storage.append(output)
+            newline()
+        }
+        prompt()
+    }
+
+}
+
 // MARK: - Delegate dispatch commands
 
 extension TerminalTextView {
 
-    func dispatchInvokeCommand() {
+    private func dispatchInvokeCommand() {
         guard let delegate = self.termDelegate else { return }
 
-        if let form = lastLine() {
+        if let cmd = lastLine() {
+            let form = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
             delegate.invokeCommand(cmd: form, sender: self)
             return
         }
         prompt()
     }
 
-    func dispatchStyleCommand() {
+    private func dispatchStyleCommand() {
         guard let delegate = self.termDelegate else { return }
         guard let storage = self.textStorage else { return }
         guard let cmd = lastLine() else { return }
         let cmdRange = self.cmdRange()
-
         let s = delegate.styleCommand(cmd: cmd, sender: self)
         storage.replaceCharacters(in: cmdRange, with: s)
     }
 
-    func dispatchGetPrompt() -> NSAttributedString {
+    private func dispatchGetPrompt() -> NSAttributedString {
         guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
         return delegate.getPrompt()
-    }
-}
-
-// MARK: - NSRange extension
-
-extension NSRange {
-
-    var isEmpty : Bool {
-        get {
-            return self.length == 0
-        }
     }
 }
