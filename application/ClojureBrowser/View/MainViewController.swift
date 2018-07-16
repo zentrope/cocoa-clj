@@ -14,6 +14,8 @@ class MainViewController: NSViewController {
 
     @IBOutlet var terminal: TerminalTextView!
 
+    var currentNamespace = "user"
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -43,7 +45,8 @@ extension MainViewController: TerminalTextViewDelegate {
     }
 
     func getPrompt() -> NSAttributedString {
-        return Style.apply("$ ", style: .prompt)
+        let prompt = "\(currentNamespace) $ "
+        return Style.apply(prompt, style: .prompt)
     }
 
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString {
@@ -66,6 +69,9 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataRec
     }
 
     func receive(response: ReplResponse) {
+        if let ns = response.ns {
+            currentNamespace = ns
+        }
         terminal.display(Style.apply(result: response))
     }
 
