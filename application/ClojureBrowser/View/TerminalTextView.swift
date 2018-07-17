@@ -48,6 +48,10 @@ class TerminalTextView: NSTextView {
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+
+        let clipboard = NSPasteboard.general
+        clipboard.declareTypes([.string], owner: self)
+
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
         clear()
     }
@@ -122,8 +126,8 @@ extension TerminalTextView {
         let cursorRange = NSMakeRange(range.location + cursorPosition, 1)
         if (cursorRange.location >= storage.length) { return }
 
-        // Use attributes (instead of selection) to avoid trashing
-        // it if user selects something in the buffer.
+        // Use attributes (instead of selection) to avoid disappearing
+        // the cursor if the user selects something in the buffer.
 
         switch status {
 
@@ -189,12 +193,19 @@ extension TerminalTextView {
     }
 
     private func copyRegion() {
-        Log.warn("copy not implemented.")
+        let range = super.selectedRange()
+        if range.location == NSNotFound || range.length == 0 { return }
+        guard let storage = textStorage else { return }
+
+        let text = storage.mutableString.substring(with: range)
+        let clipboard = NSPasteboard.general
+        clipboard.setString(text, forType: .string)
+        super.setSelectedRange(NSMakeRange(0, 0))
     }
 
     private func pasteRegion() {
         let cb = NSPasteboard.general
-        if let text = cb.string(forType: NSPasteboard.PasteboardType.string) {
+        if let text = cb.string(forType: .string) {
             insert(text.trimmingCharacters(in: .whitespacesAndNewlines))
             dispatchStyleCommand()
         }
