@@ -93,21 +93,22 @@ extension TerminalTextView {
 
         switch keyEvent.op() {
 
-        case .enter:   enter()
-        case .right:   forwardChar()
-        case .left:    backwardChar()
-        case .home:    beginningOfLine()
-        case .end:     endOfLine()
-        case .delete:  backspace()
-        case .clear:   clear(); prompt()
-        case .value:   insert(keyEvent.chs); dispatchStyleCommand()
+        case .enter:    enter()
+        case .right:    forwardChar()
+        case .left:     backwardChar()
+        case .home:     beginningOfLine()
+        case .end:      endOfLine()
+        case .delete:   backspace()
+        case .clear:    clear(); prompt()
+        case .killLine: killLine()
+        case .value:    insert(keyEvent.chs); dispatchStyleCommand()
+        case .cut:      cutRegion()
+        case .copy:     copyRegion()
+        case .paste:    pasteRegion()
 
-        case .up:      Log.info("Back history not implemented.")
-        case .down:    Log.info("Forward history not implemented.")
+        case .up:       Log.info("Back history not implemented.")
+        case .down:     Log.info("Forward history not implemented.")
 
-        case .cut:     cutRegion()
-        case .copy:    copyRegion()
-        case .paste:   pasteRegion()
 
         case .unknown: Log.info(keyEvent.describe()); return .unhandled
 
@@ -254,6 +255,22 @@ extension TerminalTextView {
         guard let storage = self.textStorage else { return }
         storage.mutableString.setString("")
         cursorPosition = 0
+    }
+
+    /// Kill from the current postion to the end of the line
+    private func killLine() {
+        if isEmpty() { return }
+        let region = NSMakeRange(bufferPoint(), bufferSize() - bufferPoint() - 1)
+        setSelectedRange(region)
+        deleteRegion()
+    }
+
+    private func bufferPoint() -> Int {
+        return cmdRange().location + cursorPosition
+    }
+
+    private func bufferSize() -> Int {
+        return self.textStorage?.length ?? 0
     }
 
     private func prompt() {

@@ -14,7 +14,8 @@ enum KeyEventResult {
 }
 
 enum KeyOp {
-    case enter, right, left, up, down, home, end, delete, clear, cut, copy, paste, unknown, value
+    case enter, right, left, up, down, home, end, delete,
+        killLine, clear, cut, copy, paste, unknown, value
 }
 
 struct KeyEvent {
@@ -72,6 +73,8 @@ struct KeyEvent {
             return .paste
         case (kcLetterK, let mods) where mods == [.command]:
             return .clear
+        case (kcLetterK, let mods) where mods == [.control]:
+            return .killLine
         case (kcDeleteKey, let mods) where mods.isEmpty:
             return .delete
         default:
