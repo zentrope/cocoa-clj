@@ -113,8 +113,9 @@ extension TerminalTextView {
         case .unknown: Log.info(keyEvent.describe()); return .unhandled
 
         }
-        unselect()
-
+        if keyEvent.op() != .copy {
+            unselect()
+        }
         return .handled
     }
 
@@ -249,6 +250,7 @@ extension TerminalTextView {
         guard let storage = self.textStorage else { return }
         storage.insert(NSAttributedString(string: chars), at: range.location + cursorPosition)
         cursorPosition = cursorPosition + chars.count
+        scrollToEndOfDocument(self)
     }
 
     private func clear() {
@@ -270,7 +272,7 @@ extension TerminalTextView {
     }
 
     private func bufferSize() -> Int {
-        return self.textStorage?.length ?? 0
+        return textStorage?.length ?? 0
     }
 
     private func prompt() {
@@ -280,7 +282,7 @@ extension TerminalTextView {
         storage.append(NSAttributedString(string: " "))
         cursorPosition = 0
         dispatchStyleCommand()
-        super.scrollToEndOfDocument(self)
+        scrollToEndOfDocument(self)
     }
 
     private func newline(count: Int = 1) {
