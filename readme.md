@@ -1,7 +1,18 @@
-# Clj App
+# cocoa-clj
 
 Learning some Cocoa Programming.
 
+## Application
+
+- Xcode-beta 3
+- Swift 4.2
+- High Sierra
+
+## Server
+
+- Requires a custom web-service in your clojure app.
+- [Clojure CLI](https://clojure.org/guides/getting_started)
+- Make
 
 ## License
 
