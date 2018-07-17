@@ -16,6 +16,7 @@ enum StyleMode {
     case banner
     case clojure
     case error
+    case namespace
     case output
     case prompt
     case standard
@@ -54,8 +55,10 @@ struct Style {
             s.addAttribute(.foregroundColor, value: NSColor.systemRed, range: r)
         case .output:
             s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
+        case .namespace:
+            s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
         case .prompt:
-            s.addAttribute(.foregroundColor, value: NSColor.systemPurple, range: r)
+            s.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: r)
         case .banner:
             s.addAttribute(.foregroundColor, value: NSColor.systemGray, range: r)
         }

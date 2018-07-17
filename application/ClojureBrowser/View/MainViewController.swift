@@ -45,8 +45,12 @@ extension MainViewController: TerminalTextViewDelegate {
     }
 
     func getPrompt() -> NSAttributedString {
-        let prompt = "\(currentNamespace) $ "
-        return Style.apply(prompt, style: .prompt)
+        let ns = Style.apply(currentNamespace, style: .namespace)
+        let pointer = Style.apply(" $ ", style: .prompt)
+        let prompt = NSMutableAttributedString(attributedString: ns)
+        prompt.append(pointer)
+        return prompt
+        //return Style.apply(prompt, style: .prompt)
     }
 
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString {
