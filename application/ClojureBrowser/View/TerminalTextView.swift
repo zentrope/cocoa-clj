@@ -49,6 +49,7 @@ class TerminalTextView: NSTextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
+        self.delegate = self
         let clipboard = NSPasteboard.general
         clipboard.declareTypes([.string], owner: self)
 
@@ -111,6 +112,8 @@ extension TerminalTextView {
         case .unknown: Log.info(keyEvent.describe()); return .unhandled
 
         }
+        unselect()
+
         return .handled
     }
 
@@ -163,33 +166,60 @@ extension TerminalTextView {
     }
 
     private func backwardChar() {
-        if cursorPosition > 0 {
-            cursorPosition = cursorPosition - 1
+        if !atBeginningOfLine() {
+            cursorPosition -= 1
         }
     }
 
     private func forwardChar() {
-        let max = lastLine()?.count ?? 0
-        if cursorPosition < (max - 1) {
-            cursorPosition = cursorPosition + 1
+        if !atEndOfLine() {
+            cursorPosition += 1
         }
     }
 
     private func backspace() {
-        if cursorPosition == 0 { return }
-        guard let storage = self.textStorage else { return }
+        if isEmpty() {
+            return
+        }
 
-        let range = cmdRange()
-        if range.location == 0 { return }
+        if isSelected() {
+            deleteRegion()
+            return
+        }
 
-        let place = NSMakeRange(range.location + cursorPosition - 1, 1)
+        if atBeginningOfLine() {
+            return
+        }
 
-        storage.deleteCharacters(in: place)
-        backwardChar()
+        let place = NSMakeRange(cmdRange().location + cursorPosition - 1, 1)
+        setSelectedRange(place)
+        deleteRegion()
+    }
+
+    private func deleteRegion() {
+        let region = rangeOfSelectionInCmd()
+        if region.location == NSNotFound { return }
+        guard let storage = textStorage else { return }
+        storage.mutableString.deleteCharacters(in: region)
     }
 
     private func cutRegion() {
-        Log.warn("cut not implemented.")
+
+        let selection = rangeOfSelectionInCmd()
+        if selection.location == NSNotFound || selection.length == 0 { return }
+
+        let active = cmdRange()
+
+        if selection.location < active.location { return }
+        guard let storage = textStorage else { return }
+
+        cursorOff()
+        let text = storage.mutableString.substring(with: selection)
+        let clipboard = NSPasteboard.general
+        clipboard.setString(text, forType: .string)
+
+        deleteRegion()
+        unselect()
     }
 
     private func copyRegion() {
@@ -200,7 +230,6 @@ extension TerminalTextView {
         let text = storage.mutableString.substring(with: range)
         let clipboard = NSPasteboard.general
         clipboard.setString(text, forType: .string)
-        super.setSelectedRange(NSMakeRange(0, 0))
     }
 
     private func pasteRegion() {
@@ -212,10 +241,11 @@ extension TerminalTextView {
     }
 
     private func insert(_ chars: String) {
-        guard let storage = self.textStorage else { return }
+        if isSelected() {
+            deleteRegion()
+        }
         let range = cmdRange()
-        if range.location == 0 { return }
-
+        guard let storage = self.textStorage else { return }
         storage.insert(NSAttributedString(string: chars), at: range.location + cursorPosition)
         cursorPosition = cursorPosition + chars.count
     }
@@ -233,7 +263,6 @@ extension TerminalTextView {
         storage.append(NSAttributedString(string: " "))
         cursorPosition = 0
         dispatchStyleCommand()
-        cursorOn()
         super.scrollToEndOfDocument(self)
     }
 
@@ -241,6 +270,43 @@ extension TerminalTextView {
         guard let storage = self.textStorage else { return }
         let lineEndings = String(repeating: "\n", count: count)
         storage.append(NSAttributedString(string: lineEndings))
+    }
+
+    private func unselect() {
+        super.setSelectedRange(NSMakeRange(0, 0))
+    }
+
+    private func isSelected() -> Bool {
+        let selection = self.selectedRange()
+        return selection.location != NSNotFound && selection.length != 0
+    }
+
+    private func isSelectedInCommand() -> Bool {
+        return rangeOfSelectionInCmd().location != NSNotFound
+    }
+
+    private func rangeOfSelectionInCmd() -> NSRange {
+        let notFound = NSMakeRange(NSNotFound, 0)
+        let selection = self.selectedRange()
+        if selection.location == NSNotFound || selection.length == 0 { return notFound }
+
+        let active = cmdRange()
+
+        if selection.location < active.location { return notFound }
+        return selection
+    }
+
+    private func atBeginningOfLine() -> Bool {
+        return cursorPosition == 0
+    }
+
+    private func atEndOfLine() -> Bool {
+        let max = lastLine()?.count ?? 0
+        return cursorPosition >= (max - 1)
+    }
+
+    private func isEmpty() -> Bool {
+        return cmdRange().location == 0
     }
 
     private func cmdRange() -> NSRange {
@@ -332,5 +398,39 @@ extension TerminalTextView {
     private func dispatchGetPrompt() -> NSAttributedString {
         guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
         return delegate.getPrompt()
+    }
+}
+
+// MARK: - TextView delegate
+
+extension TerminalTextView: NSTextViewDelegate {
+
+    func textView(_ textView: NSTextView,
+                  willChangeSelectionFromCharacterRange oldSelectedCharRange: NSRange,
+                  toCharacterRange newSelectedCharRange: NSRange) -> NSRange {
+
+        // Make sure the cursor position is always at the
+        // beginning of the selected range if that range
+        // is part of the command being edited.
+
+        guard let term = textView as? TerminalTextView else {
+            return newSelectedCharRange
+        }
+
+        if !term.isSelectedInCommand()  {
+            return newSelectedCharRange
+        }
+
+        let selection = term.rangeOfSelectionInCmd()
+
+        let active = term.cmdRange()
+
+        if selection.location < active.location {
+            return newSelectedCharRange
+        }
+
+        term.cursorPosition = selection.location - active.location
+        return newSelectedCharRange
+
     }
 }
