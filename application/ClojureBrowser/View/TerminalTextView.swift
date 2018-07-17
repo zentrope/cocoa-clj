@@ -95,14 +95,14 @@ extension TerminalTextView {
         case .end:     endOfLine()
         case .delete:  backspace()
         case .clear:   clear(); prompt()
-        case .value:   insert(keyEvent.chs); dispatchStyleCommand() ; cursorOn()
+        case .value:   insert(keyEvent.chs); dispatchStyleCommand()
 
         case .up:      Log.info("Back history not implemented.")
         case .down:    Log.info("Forward history not implemented.")
 
-        case .cut:     Log.info("Cut not implemented.")
-        case .copy:    Log.info("Copy not implemented.")
-        case .paste:   Log.info("Paste not implemented.")
+        case .cut:     cutRegion()
+        case .copy:    copyRegion()
+        case .paste:   pasteRegion()
 
         case .unknown: Log.info(keyEvent.describe()); return .unhandled
 
@@ -182,6 +182,22 @@ extension TerminalTextView {
 
         storage.deleteCharacters(in: place)
         backwardChar()
+    }
+
+    private func cutRegion() {
+        Log.warn("cut not implemented.")
+    }
+
+    private func copyRegion() {
+        Log.warn("copy not implemented.")
+    }
+
+    private func pasteRegion() {
+        let cb = NSPasteboard.general
+        if let text = cb.string(forType: NSPasteboard.PasteboardType.string) {
+            insert(text.trimmingCharacters(in: .whitespacesAndNewlines))
+            dispatchStyleCommand()
+        }
     }
 
     private func insert(_ chars: String) {
@@ -299,6 +315,7 @@ extension TerminalTextView {
         let cmdRange = self.cmdRange()
         let s = delegate.styleCommand(cmd: cmd, sender: self)
         storage.replaceCharacters(in: cmdRange, with: s)
+        cursorOn()
     }
 
     private func dispatchGetPrompt() -> NSAttributedString {
