@@ -328,7 +328,19 @@ extension TerminalTextView {
         return cmdRange().location == 0
     }
 
+    private func lastLine() -> String? {
+        guard let storage = self.textStorage else { return nil }
+        let range = cmdRange()
+        if range.length == 0 {
+            return nil
+        }
+        return storage.mutableString.substring(with: range)
+    }
+
     private func cmdRange() -> NSRange {
+
+        // TODO: use prompt to find last line, not last CR
+
         let empty = NSMakeRange(0, 0)
         guard let storage = self.textStorage else { return empty }
         let data = storage.string
@@ -353,14 +365,6 @@ extension TerminalTextView {
         }
     }
 
-    private func lastLine() -> String? {
-        guard let storage = self.textStorage else { return nil }
-        let range = cmdRange()
-        if range.length == 0 {
-            return nil
-        }
-        return storage.mutableString.substring(with: range)
-    }
 }
 
 // MARK: - Public API
