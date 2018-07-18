@@ -1,6 +1,6 @@
 # cocoa-clj
 
-Learning some Cocoa Programming.
+Challenge: build a Mac app that interacts with Clojure in some useful way.
 
 ## Usage
 
@@ -18,6 +18,21 @@ open                      Open the application in Xcode
 outdated                  Check for outdated server dependencies
 server                    Run the backend server
 ```
+
+## Run server from github
+
+If I gave you a binary of the Mac App, you could use the following in
+a terminal window to run the server side:
+
+    clojure -Sdeps '{:deps,{zentrope/cocoa-clj { \
+      :git/url "https://github.com/zentrope/cocoa-clj" \
+      :sha "50e53b9bf56a48568a214be7866ec7e7d01455c3" \
+      :deps/root "server"}}}' \
+      -m zentrope.cljapp.main
+
+to run the server without cloning out the source code. Eventually, the
+app itself should have an option to do this for you if you want to run
+it against a non-project JVM.
 
 ## Application
 
