@@ -83,6 +83,11 @@ struct KeyEvent {
         }
     }
 
+    func isHistoryEvent() -> Bool {
+        let e = op()
+        return e == .up || e == .down
+    }
+
     func describe() -> String {
         return describe(self.flags)
     }

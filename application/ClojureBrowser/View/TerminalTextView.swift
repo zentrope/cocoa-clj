@@ -8,6 +8,8 @@
 
 import Cocoa
 
+// MARK: - Delegate protocol
+
 protocol TerminalTextViewDelegate {
     func getPrompt() -> NSAttributedString
     func getBanner() -> NSAttributedString
@@ -18,6 +20,8 @@ protocol TerminalTextViewDelegate {
 // MARK: - Main
 
 class TerminalTextView: NSTextView {
+
+    var history = History()
 
     var keyboardEventMonitor: Any? = nil
 
@@ -105,19 +109,22 @@ extension TerminalTextView {
         case .cut:      cutRegion()
         case .copy:     copyRegion()
         case .paste:    pasteRegion()
-
-        case .up:       Log.info("Back history not implemented.")
-        case .down:     Log.info("Forward history not implemented.")
-
-
-        case .unknown: Log.info(keyEvent.describe()); return .unhandled
+        case .up:       backwardHistory()
+        case .down:     forwardHistory()
+        case .unknown:  Log.info(keyEvent.describe()); return .unhandled
 
         }
+
         if keyEvent.op() != .copy {
             unselect()
         }
+
+        if !keyEvent.isHistoryEvent() {
+            history.set(lastLine() ?? "")
+        }
         return .handled
     }
+
 
     private enum CursorToggle {
         case on, off
@@ -144,6 +151,18 @@ extension TerminalTextView {
         }
     }
 
+    private func forwardHistory() {
+        if let newCmd = history.getNext() {
+            replaceCommand(newCmd)
+        }
+    }
+
+    private func backwardHistory() {
+        if let newCmd = history.getPrev() {
+            replaceCommand(newCmd)
+        }
+    }
+
     private func cursorOn() {
         toggleCursor(.on)
     }
@@ -154,6 +173,8 @@ extension TerminalTextView {
 
     private func enter() {
         cursorOff()
+        history.set(lastLine() ?? "")
+        history.new("")
         dispatchInvokeCommand()
     }
 
@@ -328,6 +349,18 @@ extension TerminalTextView {
         return cmdRange().location == 0
     }
 
+    private func replaceCommand(_ cmd: String) {
+        let r = cmdRange()
+        if r.length <= 0 { return }
+        setSelectedRange(r)
+        deleteRegion()
+        insert(cmd + " ")
+        dispatchStyleCommand()
+
+        endOfLine()
+        scrollToEndOfDocument(self)
+    }
+
     private func lastLine() -> String? {
         guard let data = textStorage?.string else { return nil }
         let prompt = dispatchGetPrompt().string
@@ -367,12 +400,11 @@ extension TerminalTextView {
     ///     - output: The syntax highlighted string to display
     ///
     func display(_ output: NSAttributedString) {
-        guard let storage = self.textStorage else { return }
         cursorOff()
         newline()
         if (output.length > 0) {
             newline()
-            storage.append(output)
+            textStorage?.append(output)
             newline()
         }
         prompt()
