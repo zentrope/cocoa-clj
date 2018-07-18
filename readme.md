@@ -2,6 +2,23 @@
 
 Learning some Cocoa Programming.
 
+## Usage
+
+To open the Xcode project and run the server:
+
+``` shellsession
+make open server
+```
+
+Full options:
+
+``` shellsession
+help                      Show makefile based help
+open                      Open the application in Xcode
+outdated                  Check for outdated server dependencies
+server                    Run the backend server
+```
+
 ## Application
 
 - Xcode-beta 3
