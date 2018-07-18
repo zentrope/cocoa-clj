@@ -196,6 +196,8 @@ extension TerminalTextView {
         dispatchInvokeCommand()
     }
 
+    // MARK: - movement
+
     private func beginningOfLine() {
         cursorPosition = 0
     }
@@ -236,6 +238,8 @@ extension TerminalTextView {
         setSelectedRange(place)
         deleteRegion()
     }
+
+    // MARK: - region
 
     private func deleteRegion() {
         let region = rangeOfSelectionInCmd()
@@ -281,6 +285,8 @@ extension TerminalTextView {
         }
     }
 
+    // MARK: - editing
+
     private func insert(_ chars: String) {
         if isSelected() {
             deleteRegion()
@@ -306,14 +312,6 @@ extension TerminalTextView {
         deleteRegion()
     }
 
-    private func bufferPoint() -> Int {
-        return cmdRange().location + cursorPosition
-    }
-
-    private func bufferSize() -> Int {
-        return textStorage?.length ?? 0
-    }
-
     private func prompt() {
         guard let storage = self.textStorage else { return }
         storage.append(NSAttributedString(string: "\n"))
@@ -330,6 +328,8 @@ extension TerminalTextView {
         storage.append(NSAttributedString(string: lineEndings))
     }
 
+    // MARK: - selection
+    
     private func unselect() {
         super.setSelectedRange(NSMakeRange(0, 0))
     }
@@ -356,6 +356,16 @@ extension TerminalTextView {
 
         if selection.location < active.location { return notFound }
         return selection
+    }
+
+    // MARK: - reading
+
+    private func bufferPoint() -> Int {
+        return cmdRange().location + cursorPosition
+    }
+
+    private func bufferSize() -> Int {
+        return textStorage?.length ?? 0
     }
 
     private func atBeginningOfLine() -> Bool {
