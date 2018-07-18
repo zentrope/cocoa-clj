@@ -17,6 +17,13 @@ protocol TerminalTextViewDelegate {
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString
 }
 
+protocol TerminalCutCopyPasteDelegate {
+    func setCutCopyPaste(cut: Bool, copy: Bool, paste: Bool)
+    func setCutMenu(on: Bool)
+    func setCopyMenu(on: Bool)
+    func setPasteMenu(on: Bool)
+}
+
 // MARK: - Main
 
 class TerminalTextView: NSTextView {
@@ -30,6 +37,12 @@ class TerminalTextView: NSTextView {
         didSet { cursorOn() }
     }
 
+    var clipboardDelegate: TerminalCutCopyPasteDelegate? {
+        didSet {
+            clipboardDelegate?.setCutCopyPaste(cut: false, copy: false, paste: isPasteAvailable())
+        }
+    }
+    
     var termDelegate: TerminalTextViewDelegate? {
         didSet {
             if let b = termDelegate?.getBanner() {
@@ -54,10 +67,10 @@ class TerminalTextView: NSTextView {
         super.init(coder: coder)
 
         self.delegate = self
-        let clipboard = NSPasteboard.general
-        clipboard.declareTypes([.string], owner: self)
-
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
+
+        NSPasteboard.general.declareTypes([.string], owner: self)
+
         clear()
     }
 
@@ -114,6 +127,8 @@ extension TerminalTextView {
         case .unknown:  Log.info(keyEvent.describe()); return .unhandled
 
         }
+
+        clipboardDelegate?.setPasteMenu(on: isPasteAvailable())
 
         if keyEvent.op() != .copy {
             unselect()
@@ -325,6 +340,10 @@ extension TerminalTextView {
         return rangeOfSelectionInCmd().location != NSNotFound
     }
 
+    private func isPasteAvailable() -> Bool {
+        return NSPasteboard.general.string(forType: .string) != nil
+    }
+
     private func rangeOfSelectionInCmd() -> NSRange {
         let notFound = NSMakeRange(NSNotFound, 0)
         let selection = self.selectedRange()
@@ -410,6 +429,24 @@ extension TerminalTextView {
         prompt()
     }
 
+    /// Invoke the pasteboard cut function. Use this when
+    /// hooking up menus.
+    func invokeCut() {
+        cutRegion()
+    }
+
+    /// Invoke the pasteboard copy function. Use this when
+    /// hooking up menus.
+    func invokeCopy() {
+        copyRegion()
+    }
+
+    /// Invoke the pasteboard paste function. Use this when
+    /// hooking up menus.
+    func invokePaste() {
+        pasteRegion()
+    }
+
 }
 
 // MARK: - Delegate dispatch commands
@@ -449,31 +486,30 @@ extension TerminalTextView {
 
 extension TerminalTextView: NSTextViewDelegate {
 
-    func textView(_ textView: NSTextView,
-                  willChangeSelectionFromCharacterRange oldSelectedCharRange: NSRange,
-                  toCharacterRange newSelectedCharRange: NSRange) -> NSRange {
+    func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRange oldSelectedCharRange: NSRange, toCharacterRange newSelectedCharRange: NSRange) -> NSRange {
 
-        // Make sure the cursor position is always at the
-        // beginning of the selected range if that range
-        // is part of the command being edited.
+        clipboardDelegate?.setCutCopyPaste(
+            cut: isSelectedInCommand(),
+            copy: newSelectedCharRange.length > 0,
+            paste: isPasteAvailable())
 
-        guard let term = textView as? TerminalTextView else {
+        if !isSelectedInCommand()  {
             return newSelectedCharRange
         }
 
-        if !term.isSelectedInCommand()  {
-            return newSelectedCharRange
-        }
+        let selection = rangeOfSelectionInCmd()
 
-        let selection = term.rangeOfSelectionInCmd()
-
-        let active = term.cmdRange()
+        let active = cmdRange()
 
         if selection.location < active.location {
             return newSelectedCharRange
         }
 
-        term.cursorPosition = selection.location - active.location
+        // Make sure the cursor position is always at the
+        // beginning of the selected range if that range
+        // is part of the command being edited.
+
+        cursorPosition = selection.location - active.location
         return newSelectedCharRange
 
     }

@@ -20,7 +20,10 @@ class MainViewController: NSViewController {
         super.viewDidLoad()
 
         Notify.shared.register(receiver: self)
-        self.terminal.termDelegate = self
+        terminal.termDelegate = self
+        if let appDel = NSApplication.shared.delegate as? TerminalCutCopyPasteDelegate {
+            terminal.clipboardDelegate = appDel
+        }
     }
 
     override func viewWillAppear() {
@@ -33,6 +36,18 @@ class MainViewController: NSViewController {
     override func viewWillDisappear() {
         super.viewWillDisappear()
         Notify.shared.unregister(receiver: self)
+    }
+
+    @IBAction func cutMenuItemClicked(_ sender: NSMenuItem) {
+        terminal.invokeCut()
+    }
+
+    @IBAction func copyMenuItemClicked(_ sender: NSMenuItem) {
+        terminal.invokeCopy()
+    }
+
+    @IBAction func pasteMenuItemClicked(_ sender: NSMenuItem) {
+        terminal.invokePaste()
     }
 }
 
@@ -73,9 +88,7 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataRec
     }
 
     func receive(response: ReplResponse) {
-        if let ns = response.ns {
-            currentNamespace = ns
-        }
+        currentNamespace = response.ns ?? currentNamespace
         terminal.display(Style.apply(result: response))
     }
 
