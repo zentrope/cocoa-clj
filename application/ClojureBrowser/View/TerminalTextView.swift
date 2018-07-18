@@ -119,13 +119,15 @@ extension TerminalTextView {
         case .clear:    clear(); prompt()
         case .killLine: killLine()
         case .value:    insert(keyEvent.chs); dispatchStyleCommand()
-        case .cut:      cutRegion()
-        case .copy:     copyRegion()
-        case .paste:    pasteRegion()
         case .up:       backwardHistory()
         case .down:     forwardHistory()
         case .unknown:  Log.info(keyEvent.describe()); return .unhandled
 
+        // If a delegate has been set, let it handle cut/copy/paste invocation. This
+        // allows for menu item flashes, sounds, etc.
+        case .cut:      if clipboardDelegate == nil { cutRegion() } else { return .unhandled }
+        case .copy:     if clipboardDelegate == nil { copyRegion() } else { return .unhandled }
+        case .paste:    if clipboardDelegate == nil { pasteRegion() } else { return .unhandled }
         }
 
         clipboardDelegate?.setPasteMenu(on: isPasteAvailable())
@@ -137,6 +139,7 @@ extension TerminalTextView {
         if !keyEvent.isHistoryEvent() {
             history.set(lastLine() ?? "")
         }
+
         return .handled
     }
 
