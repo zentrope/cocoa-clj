@@ -202,7 +202,7 @@ extension TerminalTextView {
         let region = rangeOfSelectionInCmd()
         if region.location == NSNotFound { return }
         guard let storage = textStorage else { return }
-        storage.mutableString.deleteCharacters(in: region)
+        storage.deleteCharacters(in: region)
     }
 
     private func cutRegion() {
@@ -329,40 +329,29 @@ extension TerminalTextView {
     }
 
     private func lastLine() -> String? {
-        guard let storage = self.textStorage else { return nil }
-        let range = cmdRange()
-        if range.length == 0 {
-            return nil
+        guard let data = textStorage?.string else { return nil }
+        let prompt = dispatchGetPrompt().string
+        if let range = data.range(of: prompt, options: .backwards, range: nil, locale: nil) {
+            return String(data[range.upperBound..<data.endIndex])
         }
-        return storage.mutableString.substring(with: range)
+        return nil
     }
 
+    /// Return the region of the current `command` being edited.
+    /// - Returns: The range after the prompt to the end of the buffer
     private func cmdRange() -> NSRange {
-
-        // TODO: use prompt to find last line, not last CR
 
         let empty = NSMakeRange(0, 0)
         guard let storage = self.textStorage else { return empty }
         let data = storage.string
-        let range = NSMakeRange(0, data.count)
-        let cmdRangePattern = "(?<=[\n]).*?\\z"
 
-        // What if there's no prompt on the last line? Hm.
-        let promptSize = dispatchGetPrompt().length
-
-        do {
-            let regex = try NSRegularExpression(pattern: cmdRangePattern, options: [])
-            if let match = regex.firstMatch(in: data, options: [], range: range) {
-                return NSMakeRange(match.range.location + promptSize, match.range.length - promptSize)
-            } else {
-                return empty
-            }
-        }
-
-        catch {
-            print(error)
+        guard let guess = data.range(of: dispatchGetPrompt().string, options: .backwards, range: nil, locale: nil) else {
             return empty
         }
+
+        let length = data.distance(from: guess.upperBound, to: data.endIndex)
+        let location = guess.upperBound.encodedOffset
+        return NSMakeRange(location, length)
     }
 
 }
