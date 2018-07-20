@@ -15,6 +15,7 @@ enum KeyEventResult {
 
 enum KeyOp {
     case enter, right, left, up, down, home, end, delete,
+        selectLeft, selectRight,
         killLine, clear, cut, copy, paste, unknown, value
 }
 
@@ -42,7 +43,7 @@ struct KeyEvent {
         event = theEvent
         chs = theEvent.characters ?? ""
         key = Int(theEvent.keyCode)
-        flags = theEvent.modifierFlags.intersection([.command, .control, .function, .option])
+        flags = theEvent.modifierFlags.intersection([.command, .control, .function, .option, .shift])
     }
 
     func op() -> KeyOp {
@@ -61,6 +62,10 @@ struct KeyEvent {
             return .right
         case (kcLeftArrow, let mods) where mods == [.function]:
             return .left
+        case (kcRightArrow, let mods) where mods == [.function, .shift]:
+            return .selectRight
+        case (kcLeftArrow, let mods) where mods == [.function, .shift]:
+            return .selectLeft
         case (kcUpArrow, let mods) where mods == [.function]:
             return .up
         case (kcDownArrow, let mods) where mods == [.function]:
@@ -78,7 +83,9 @@ struct KeyEvent {
         case (kcDeleteKey, let mods) where mods.isEmpty:
             return .delete
         default:
-            if flags.isEmpty { return .value }
+            if flags.isEmpty || flags == [.shift] {
+                return .value
+            }
             return .unknown
         }
     }
@@ -94,10 +101,11 @@ struct KeyEvent {
 
     func describe(_ flags: NSEvent.ModifierFlags) -> String {
         var d = [String]()
-        if flags.contains(.command) { d.append("⌘")}
-        if flags.contains(.option) { d.append("⌥")}
-        if flags.contains(.control) { d.append("⌃")}
+        if flags.contains(.command)  { d.append("cmd")}
+        if flags.contains(.option)   { d.append("alt")}
+        if flags.contains(.control)  { d.append("ctl")}
         if flags.contains(.function) { d.append("fn")}
+        if flags.contains(.function) { d.append("shift")}
         d.append(String(key))
         return d.joined(separator: "-")
     }

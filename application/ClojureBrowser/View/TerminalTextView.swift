@@ -110,24 +110,30 @@ extension TerminalTextView {
 
         switch keyEvent.op() {
 
-        case .enter:    enter()
-        case .right:    forwardChar()
-        case .left:     backwardChar()
-        case .home:     beginningOfLine()
-        case .end:      endOfLine()
-        case .delete:   backspace()
-        case .clear:    clear(); prompt()
-        case .killLine: killLine()
-        case .value:    insert(keyEvent.chs); dispatchStyleCommand()
-        case .up:       backwardHistory()
-        case .down:     forwardHistory()
-        case .unknown:  Log.info(keyEvent.describe()); return .unhandled
+        case .enter:       enter()
+        case .right:       forwardChar()
+        case .left:        backwardChar()
+        case .home:        beginningOfLine()
+        case .end:         endOfLine()
+        case .delete:      backspace()
+        case .clear:       clear(); prompt()
+        case .killLine:    killLine()
+        case .value:       insert(keyEvent.chs); dispatchStyleCommand()
+        case .up:          backwardHistory()
+        case .down:        forwardHistory()
+        case .unknown:     Log.info(keyEvent.describe()); return .unhandled
 
-        // If a delegate has been set, let it handle cut/copy/paste invocation. This
-        // allows for menu item flashes, sounds, etc.
-        case .cut:      if clipboardDelegate == nil { cutRegion() } else { return .unhandled }
-        case .copy:     if clipboardDelegate == nil { copyRegion() } else { return .unhandled }
-        case .paste:    if clipboardDelegate == nil { pasteRegion() } else { return .unhandled }
+        // Let NSTextView draw the selection via shift right/left arrow. The
+        // text view delegate will adjust the cursor as needed if the selection
+        // is in the command area.
+        case .selectLeft:  return .unhandled
+        case .selectRight: return .unhandled
+
+        // If a delegate has been set, let it handle cut/copy/paste invocation.
+        // This allows for menu item flashes, sounds, etc.
+        case .cut:   if clipboardDelegate == nil { cutRegion() } else { return .unhandled }
+        case .copy:  if clipboardDelegate == nil { copyRegion() } else { return .unhandled }
+        case .paste: if clipboardDelegate == nil { pasteRegion() } else { return .unhandled }
         }
 
         clipboardDelegate?.setPasteMenu(on: isPasteAvailable())
@@ -137,15 +143,25 @@ extension TerminalTextView {
         }
 
         if !keyEvent.isHistoryEvent() {
-            history.set(lastLine() ?? "")
+            history.set(getCommandText() ?? "")
         }
 
+        putCursor()
         return .handled
     }
 
+    // MARK: - Cursor
 
     private enum CursorToggle {
         case on, off
+    }
+
+    private func putCursor() {
+        // NSTextView's pointer is the first selected range with a zero length.
+        // This is here so that the keyboard select region works leveraging
+        // NSTextView rather than custom code.
+        let r = cmdRange()
+        setSelectedRange(NSMakeRange(r.location + cursorPosition, 0))
     }
 
     private func toggleCursor(_ status: CursorToggle) {
@@ -166,6 +182,17 @@ extension TerminalTextView {
 
         case .off:
             storage.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: cursorRange)
+        }
+    }
+
+    private func moveCursor(to newPos: Int) {
+        let cmd = cmdRange()
+        if newPos < 0 {
+            cursorPosition = 0
+        } else if newPos > (cmd.length - 1) {
+            cursorPosition = cmd.length - 1
+        } else {
+            cursorPosition = newPos
         }
     }
 
@@ -191,7 +218,7 @@ extension TerminalTextView {
 
     private func enter() {
         cursorOff()
-        history.set(lastLine() ?? "")
+        history.set(getCommandText() ?? "")
         history.new("")
         dispatchInvokeCommand()
     }
@@ -199,25 +226,37 @@ extension TerminalTextView {
     // MARK: - movement
 
     private func beginningOfLine() {
-        cursorPosition = 0
+        moveCursor(to: 0)
     }
 
     private func endOfLine() {
-        if let line = lastLine() {
-            cursorPosition = line.count - 1
-        }
+        moveCursor(to: cmdRange().length - 1)
     }
 
     private func backwardChar() {
-        if !atBeginningOfLine() {
-            cursorPosition -= 1
+
+        if isSelectedInCommand() {
+            let cmd = cmdRange()
+            let region = rangeOfSelectionInCmd()
+            unselect()
+            moveCursor(to: region.location - cmd.location - 1)
+            return
         }
+
+        moveCursor(to: cursorPosition - 1)
     }
 
     private func forwardChar() {
-        if !atEndOfLine() {
-            cursorPosition += 1
+
+        if isSelectedInCommand() {
+            let cmd = cmdRange()
+            let region = rangeOfSelectionInCmd()
+            unselect()
+            moveCursor(to: (region.location + region.length) - cmd.location)
+            return
         }
+
+        moveCursor(to: cursorPosition + 1)
     }
 
     private func backspace() {
@@ -244,8 +283,7 @@ extension TerminalTextView {
     private func deleteRegion() {
         let region = rangeOfSelectionInCmd()
         if region.location == NSNotFound { return }
-        guard let storage = textStorage else { return }
-        storage.deleteCharacters(in: region)
+        textStorage?.deleteCharacters(in: region)
     }
 
     private func cutRegion() {
@@ -294,14 +332,14 @@ extension TerminalTextView {
         let range = cmdRange()
         guard let storage = self.textStorage else { return }
         storage.insert(NSAttributedString(string: chars), at: range.location + cursorPosition)
-        cursorPosition = cursorPosition + chars.count
+        moveCursor(to: cursorPosition + chars.count)
         scrollToEndOfDocument(self)
     }
 
     private func clear() {
         guard let storage = self.textStorage else { return }
         storage.mutableString.setString("")
-        cursorPosition = 0
+        moveCursor(to: 0)
     }
 
     /// Kill from the current postion to the end of the line
@@ -317,7 +355,7 @@ extension TerminalTextView {
         storage.append(NSAttributedString(string: "\n"))
         storage.append(dispatchGetPrompt())
         storage.append(NSAttributedString(string: " "))
-        cursorPosition = 0
+        moveCursor(to: 0)
         dispatchStyleCommand()
         scrollToEndOfDocument(self)
     }
@@ -328,10 +366,23 @@ extension TerminalTextView {
         storage.append(NSAttributedString(string: lineEndings))
     }
 
+    private func replaceCommand(_ cmd: String) {
+        let r = cmdRange()
+        if r.length > 0 {
+            setSelectedRange(r)
+            deleteRegion()
+            endOfLine()
+        }
+        insert(cmd + " ")
+        dispatchStyleCommand()
+        endOfLine()
+        scrollToEndOfDocument(self)
+    }
+
     // MARK: - selection
     
     private func unselect() {
-        super.setSelectedRange(NSMakeRange(0, 0))
+        setSelectedRange(NSMakeRange(cmdRange().location + cursorPosition, 0))
     }
 
     private func isSelected() -> Bool {
@@ -349,7 +400,7 @@ extension TerminalTextView {
 
     private func rangeOfSelectionInCmd() -> NSRange {
         let notFound = NSMakeRange(NSNotFound, 0)
-        let selection = self.selectedRange()
+        let selection = selectedRange()
         if selection.location == NSNotFound || selection.length == 0 { return notFound }
 
         let active = cmdRange()
@@ -373,7 +424,7 @@ extension TerminalTextView {
     }
 
     private func atEndOfLine() -> Bool {
-        let max = lastLine()?.count ?? 0
+        let max = getCommandText()?.count ?? 0
         return cursorPosition >= (max - 1)
     }
 
@@ -381,19 +432,7 @@ extension TerminalTextView {
         return cmdRange().location == 0
     }
 
-    private func replaceCommand(_ cmd: String) {
-        let r = cmdRange()
-        if r.length <= 0 { return }
-        setSelectedRange(r)
-        deleteRegion()
-        insert(cmd + " ")
-        dispatchStyleCommand()
-
-        endOfLine()
-        scrollToEndOfDocument(self)
-    }
-
-    private func lastLine() -> String? {
+    private func getCommandText() -> String? {
         guard let data = textStorage?.string else { return nil }
         let prompt = dispatchGetPrompt().string
         if let range = data.range(of: prompt, options: .backwards, range: nil, locale: nil) {
@@ -409,13 +448,15 @@ extension TerminalTextView {
         let empty = NSMakeRange(0, 0)
         guard let storage = self.textStorage else { return empty }
         let data = storage.string
+        let prompt = dispatchGetPrompt().string
 
-        guard let guess = data.range(of: dispatchGetPrompt().string, options: .backwards, range: nil, locale: nil) else {
+        guard let guess = data.range(of: prompt, options: .backwards, range: nil, locale: nil) else {
             return empty
         }
 
         let length = data.distance(from: guess.upperBound, to: data.endIndex)
         let location = guess.upperBound.encodedOffset
+
         return NSMakeRange(location, length)
     }
 
@@ -469,7 +510,7 @@ extension TerminalTextView {
     private func dispatchInvokeCommand() {
         guard let delegate = self.termDelegate else { return }
 
-        if let cmd = lastLine() {
+        if let cmd = getCommandText() {
             let form = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
             if !form.isEmpty {
                 delegate.invokeCommand(cmd: form, sender: self)
@@ -482,7 +523,7 @@ extension TerminalTextView {
     private func dispatchStyleCommand() {
         guard let delegate = self.termDelegate else { return }
         guard let storage = self.textStorage else { return }
-        guard let cmd = lastLine() else { return }
+        guard let cmd = getCommandText() else { return }
         let cmdRange = self.cmdRange()
         let s = delegate.styleCommand(cmd: cmd, sender: self)
         storage.replaceCharacters(in: cmdRange, with: s)
@@ -490,8 +531,7 @@ extension TerminalTextView {
     }
 
     private func dispatchGetPrompt() -> NSAttributedString {
-        guard let delegate = self.termDelegate else { return NSAttributedString(string: "$ ")}
-        return delegate.getPrompt()
+        return termDelegate?.getPrompt() ?? NSAttributedString(string: "$ ")
     }
 }
 
@@ -522,7 +562,7 @@ extension TerminalTextView: NSTextViewDelegate {
         // beginning of the selected range if that range
         // is part of the command being edited.
 
-        cursorPosition = selection.location - active.location
+        moveCursor(to: selection.location - active.location)
         return newSelectedCharRange
 
     }
