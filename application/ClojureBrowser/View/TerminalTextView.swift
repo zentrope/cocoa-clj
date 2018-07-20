@@ -284,6 +284,14 @@ extension TerminalTextView {
         let region = rangeOfSelectionInCmd()
         if region.location == NSNotFound { return }
         textStorage?.deleteCharacters(in: region)
+
+        // If the entire command disappeared, reset it
+        if cmdRange().length == 0 {
+            replaceCommand(" ")
+            beginningOfLine()
+        }
+
+        cursorOn()
     }
 
     private func cutRegion() {
@@ -546,24 +554,13 @@ extension TerminalTextView: NSTextViewDelegate {
             copy: newSelectedCharRange.length > 0,
             paste: isPasteAvailable())
 
-        if !isSelectedInCommand()  {
+        let command = cmdRange()
+        let intersection = NSIntersectionRange(command, newSelectedCharRange)
+        if intersection.length > 0 {
+            moveCursor(to: intersection.location - command.location)
+            return intersection
+        } else {
             return newSelectedCharRange
         }
-
-        let selection = rangeOfSelectionInCmd()
-
-        let active = cmdRange()
-
-        if selection.location < active.location {
-            return newSelectedCharRange
-        }
-
-        // Make sure the cursor position is always at the
-        // beginning of the selected range if that range
-        // is part of the command being edited.
-
-        moveCursor(to: selection.location - active.location)
-        return newSelectedCharRange
-
     }
 }
