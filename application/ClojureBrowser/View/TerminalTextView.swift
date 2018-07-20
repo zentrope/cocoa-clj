@@ -53,6 +53,30 @@ class TerminalTextView: NSTextView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+
+        // Don't draw a cursor if a selection is in progress
+        if selectedRange().length > 0 {
+            return
+        }
+
+        guard let layoutManager = self.layoutManager,
+            let textContainer = self.textContainer else {
+                return
+        }
+
+        let color = NSColor.systemGray
+        let cursor = NSMakeRange(cmdRange().location+cursorPosition, 1)
+
+        let textRange = layoutManager.glyphRange(forCharacterRange: cursor, actualCharacterRange: nil)
+        var layoutRect = layoutManager.boundingRect(forGlyphRange: textRange, in: textContainer)
+
+        let containerOrigin = textContainerOrigin
+        layoutRect.origin.x += containerOrigin.x - 1
+        layoutRect.origin.y += containerOrigin.y - 1
+        layoutRect.size.width = 1.0
+        layoutRect.size.height += 2.0
+
+        drawInsertionPoint(in: layoutRect, color: color, turnedOn: true)
     }
 
     override init(frame: NSRect, textContainer: NSTextContainer?) {
@@ -165,6 +189,7 @@ extension TerminalTextView {
     }
 
     private func toggleCursor(_ status: CursorToggle) {
+        /*
         let range = cmdRange()
         guard let storage = textStorage else { return }
 
@@ -183,6 +208,7 @@ extension TerminalTextView {
         case .off:
             storage.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: cursorRange)
         }
+         */
     }
 
     private func moveCursor(to newPos: Int) {
@@ -194,6 +220,7 @@ extension TerminalTextView {
         } else {
             cursorPosition = newPos
         }
+        needsDisplay = true
     }
 
     private func forwardHistory() {
@@ -381,7 +408,8 @@ extension TerminalTextView {
             deleteRegion()
             endOfLine()
         }
-        insert(cmd + " ")
+
+        insert(cmd.trimmingCharacters(in: .whitespacesAndNewlines) + " ")
         dispatchStyleCommand()
         endOfLine()
         scrollToEndOfDocument(self)
@@ -554,7 +582,8 @@ extension TerminalTextView: NSTextViewDelegate {
             copy: newSelectedCharRange.length > 0,
             paste: isPasteAvailable())
 
-        let command = cmdRange()
+        var command = cmdRange()
+        command.length -= 1
         let intersection = NSIntersectionRange(command, newSelectedCharRange)
         if intersection.length > 0 {
             moveCursor(to: intersection.location - command.location)
