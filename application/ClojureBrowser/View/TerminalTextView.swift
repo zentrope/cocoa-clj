@@ -29,13 +29,8 @@ protocol TerminalCutCopyPasteDelegate {
 class TerminalTextView: NSTextView {
 
     var history = History()
-
     var keyboardEventMonitor: Any? = nil
-
-    var cursorPosition: Int = 0 {
-        willSet { cursorOff() }
-        didSet { cursorOn() }
-    }
+    var cursorPosition: Int = 0
 
     var clipboardDelegate: TerminalCutCopyPasteDelegate? {
         didSet {
@@ -64,15 +59,16 @@ class TerminalTextView: NSTextView {
                 return
         }
 
-        let color = NSColor.systemGray
+        let color = insertionPointColor
         let cursor = NSMakeRange(cmdRange().location+cursorPosition, 1)
-
+        
         let textRange = layoutManager.glyphRange(forCharacterRange: cursor, actualCharacterRange: nil)
         var layoutRect = layoutManager.boundingRect(forGlyphRange: textRange, in: textContainer)
 
         let containerOrigin = textContainerOrigin
         layoutRect.origin.x += containerOrigin.x - 1
         layoutRect.origin.y += containerOrigin.y - 1
+
         layoutRect.size.width = 1.0
         layoutRect.size.height += 2.0
 
@@ -188,29 +184,6 @@ extension TerminalTextView {
         setSelectedRange(NSMakeRange(r.location + cursorPosition, 0))
     }
 
-    private func toggleCursor(_ status: CursorToggle) {
-        /*
-        let range = cmdRange()
-        guard let storage = textStorage else { return }
-
-        if range.location == 0 { return }
-        let cursorRange = NSMakeRange(range.location + cursorPosition, 1)
-        if (cursorRange.location >= storage.length) { return }
-
-        // Use attributes (instead of selection) to avoid disappearing
-        // the cursor if the user selects something in the buffer.
-
-        switch status {
-
-        case .on:
-            storage.addAttribute(.backgroundColor, value: NSColor.selectedTextBackgroundColor, range: cursorRange)
-
-        case .off:
-            storage.addAttribute(.backgroundColor, value: NSColor.textBackgroundColor, range: cursorRange)
-        }
-         */
-    }
-
     private func moveCursor(to newPos: Int) {
         let cmd = cmdRange()
         if newPos < 0 {
@@ -235,16 +208,7 @@ extension TerminalTextView {
         }
     }
 
-    private func cursorOn() {
-        toggleCursor(.on)
-    }
-
-    private func cursorOff() {
-        toggleCursor(.off)
-    }
-
     private func enter() {
-        cursorOff()
         history.set(getCommandText() ?? "")
         history.new("")
         dispatchInvokeCommand()
@@ -317,8 +281,6 @@ extension TerminalTextView {
             replaceCommand(" ")
             beginningOfLine()
         }
-
-        cursorOn()
     }
 
     private func cutRegion() {
@@ -331,7 +293,6 @@ extension TerminalTextView {
         if selection.location < active.location { return }
         guard let storage = textStorage else { return }
 
-        cursorOff()
         let text = storage.mutableString.substring(with: selection)
         let clipboard = NSPasteboard.general
         clipboard.setString(text, forType: .string)
@@ -509,7 +470,6 @@ extension TerminalTextView {
     ///     - output: The syntax highlighted string to display
     ///
     func display(_ output: NSAttributedString) {
-        cursorOff()
         newline()
         if (output.length > 0) {
             newline()
@@ -563,7 +523,6 @@ extension TerminalTextView {
         let cmdRange = self.cmdRange()
         let s = delegate.styleCommand(cmd: cmd, sender: self)
         storage.replaceCharacters(in: cmdRange, with: s)
-        cursorOn()
     }
 
     private func dispatchGetPrompt() -> NSAttributedString {
