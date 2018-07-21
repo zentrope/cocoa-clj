@@ -46,6 +46,10 @@ struct CLJSource : Codable {
     var source: String
 }
 
+enum CLJSymFilter {
+    case all, publics
+}
+
 class CLJNameSpace : Codable {
     var name: String
     private var interns: [CLJSymbol]
@@ -59,6 +63,15 @@ class CLJNameSpace : Codable {
     lazy var publics: [CLJSymbol] = {
         return symbols.filter { !$0.isPrivate }
     }()
+
+    func symbols(filter: CLJSymFilter) -> [CLJSymbol] {
+        switch filter {
+        case .all:
+            return symbols
+        case .publics:
+            return publics
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case name

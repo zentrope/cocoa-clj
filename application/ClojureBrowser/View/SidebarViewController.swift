@@ -30,7 +30,16 @@ class SidebarViewController: NSViewController {
     var libGroup = SidebarGroup("Libraries")
     var cloGroup = SidebarGroup("Clojure")
 
-    var showOnlyPublic = true
+    var symFilter: CLJSymFilter = .publics
+    var showOnlyPublic = true {
+        didSet {
+            if showOnlyPublic {
+                symFilter = .publics
+            } else {
+                symFilter = .all
+            }
+        }
+    }
 
     lazy var groups = { return [appGroup, libGroup, cloGroup] }()
 
@@ -95,10 +104,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
             return group.namespaces.count
 
         case let namespace as CLJNameSpace:
-            if showOnlyPublic {
-                return namespace.publics.count
-            }
-            return namespace.symbols.count
+            return namespace.symbols(filter: symFilter).count
 
         default:
             return item == nil ? groups.count : 0
@@ -113,10 +119,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
             return group.namespaces[index]
 
         case let namespace as CLJNameSpace:
-            if showOnlyPublic {
-                return namespace.publics[index]
-            }
-            return namespace.symbols[index]
+            return namespace.symbols(filter: symFilter)[index]
 
         default:
             return groups[index]
@@ -131,10 +134,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
             return true
 
         case let namespace as CLJNameSpace:
-            if showOnlyPublic {
-                return namespace.publics.count != 0
-            }
-            return namespace.symbols.count != 0
+            return namespace.symbols(filter: symFilter).count != 0
 
         case _ as CLJSymbol:
             return false
