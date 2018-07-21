@@ -92,8 +92,6 @@ class TerminalTextView: NSTextView {
         let key = Int(theEvent.keyCode)
         let flags = theEvent.modifierFlags.intersection([.function])
 
-        print("key: \(key) \(flags)")
-
         if flags.isEmpty && key == kcReturnKey {
             history.set(getCommandText() ?? "")
             history.new("")
@@ -212,7 +210,15 @@ extension TerminalTextView {
         guard let cmd = getCommandText() else { return }
         let cmdRange = self.cmdRange()
         let s = delegate.styleCommand(cmd: cmd, sender: self)
-        storage.replaceCharacters(in: cmdRange, with: s)
+        preservingCursor {
+            storage.replaceCharacters(in: cmdRange, with: s)
+        }
+    }
+
+    private func preservingCursor(_ closure: () -> ()) {
+        let cursor = selectedRange()
+        closure()
+        setSelectedRange(cursor)
     }
 
     private func dispatchGetPrompt() -> NSAttributedString {
