@@ -8,14 +8,14 @@
 
 import Foundation
 
-class History {
+struct History {
 
     let max = 50 // oldest
     var buffer = ArraySlice<String>()
     var pointer = 0 // newest
 
     /// Get the previous entry to the one at hand (.i.e., up arrow).
-    func getPrev() -> String? {
+    mutating func getPrev() -> String? {
         let newPtr = pointer + 1
         if newPtr >= buffer.count {
             return nil
@@ -25,7 +25,7 @@ class History {
     }
 
     /// Get the next (more recent) entry (i.e., down arrow).
-    func getNext() -> String? {
+    mutating func getNext() -> String? {
         let newPtr = pointer - 1 > 0 ? pointer - 1 : 0
         if newPtr >= buffer.count {
             pointer = 0
@@ -36,9 +36,9 @@ class History {
     }
 
     /// Set the current history with a new value.
-    func set(_ cmd: String) {
+    mutating func set(_ cmd: String) {
         let newCmd = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
-
+        
         if buffer.count == 0 {
             buffer.insert(cmd, at: 0)
         } else {
@@ -48,14 +48,15 @@ class History {
     }
 
     /// Add a new history item, pushing the rest back
-    func new(_ cmd: String) {
-        let newCmd = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
-        buffer.insert(newCmd, at: 0)
+    mutating func new() {
+        if (buffer.count == 0) || !buffer[0].isEmpty {
+            buffer.insert("", at: 0)
+        }
         pointer = 0
         truncate()
     }
 
-    private func truncate() {
+    mutating private func truncate() {
         if buffer.count > max {
             buffer = buffer[0...max]
         }

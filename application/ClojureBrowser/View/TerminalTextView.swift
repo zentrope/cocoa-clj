@@ -84,40 +84,30 @@ class TerminalTextView: NSTextView {
 
     private func handleKeyDown(with theEvent: NSEvent) -> Bool {
 
-        let kcReturnKey  =  36
-        let kcDelete =      51
-        let kcDownArrow  = 125
-        let kcUpArrow    = 126
+        switch KeyEvent.op(event: theEvent) {
 
-        let key = Int(theEvent.keyCode)
-        let flags = theEvent.modifierFlags.intersection([.function])
-
-        if flags.isEmpty && key == kcReturnKey {
+        case .enter:
             history.set(getCommandText() ?? "")
-            history.new("")
+            history.new()
             dispatchInvokeCommand()
-            return true
-        }
 
-        if flags.isEmpty && key == kcDelete {
-            // Don't allow the user to backspace over the prompt.
+        case .delete:
             return selectedRange().length == 0 && ((selectedRange().location - 1) < cmdRange().location)
-        }
 
-        if flags == [.function] && key == kcDownArrow {
-            Log.warn("History not implemented.")
-        }
+        case .down:
+            forwardHistory()
 
-        if flags == [.function] && key == kcUpArrow {
-            Log.warn("History not implemented.")
-        }
+        case .up:
+            backwardHistory()
 
-        return false
+        case .other:
+            return false
+        }
+        return true
     }
 
     private func forwardHistory() {
         if let newCmd = history.getNext() {
-            print(newCmd)
             replaceCommand(newCmd)
         }
     }
@@ -144,10 +134,9 @@ class TerminalTextView: NSTextView {
     }
 
     private func replaceCommand(_ cmd: String) {
-        guard let storage = self.textStorage else { return }
         let cmdRange = self.cmdRange()
-        storage.replaceCharacters(in: cmdRange, with: cmd.trimmingCharacters(in: .whitespacesAndNewlines))
-        dispatchStyleCommand()
+        let newCmd = termDelegate?.styleCommand(cmd: cmd, sender: self) ?? NSAttributedString(string: cmd)
+        textStorage?.replaceCharacters(in: cmdRange, with: newCmd)
     }
 
     private func getCommandText() -> String? {
@@ -253,3 +242,31 @@ extension TerminalTextView: NSTextViewDelegate {
         }
     }
 }
+
+// MARK: - Keyboard event helper
+
+private struct KeyEvent {
+
+    enum KeyFunction {
+        case enter, delete, down, up, other
+    }
+
+    static func op(event: NSEvent) -> KeyFunction {
+        let flags = event.modifierFlags.intersection([.function])
+        let key = Int(event.keyCode)
+
+        switch (key, flags) {
+        case (36, let f) where f == []:
+            return .enter
+        case (51, let f) where f == []:
+            return .delete
+        case (125, let f) where f == [.function]:
+            return .down
+        case (126, let f) where f == [.function]:
+            return .up
+        default:
+            return .other
+        }
+    }
+}
+
