@@ -69,7 +69,7 @@ class TerminalTextView: NSTextView {
             prompt()
         }
         self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
-            return self.handleKeyDown(with: $0) == .handled ? nil : $0
+            return self.handleKeyDown(with: $0) ? nil : $0
         }
         self.updateInsertionPointStateAndRestartTimer(true)
         return true
@@ -82,7 +82,7 @@ class TerminalTextView: NSTextView {
         return true
     }
 
-    private func handleKeyDown(with theEvent: NSEvent) -> KeyEventResult {
+    private func handleKeyDown(with theEvent: NSEvent) -> Bool {
 
         let kcReturnKey  =  36
         let kcDownArrow  = 125
@@ -95,7 +95,7 @@ class TerminalTextView: NSTextView {
             history.set(getCommandText() ?? "")
             history.new("")
             dispatchInvokeCommand()
-            return .handled
+            return true
         }
 
         if flags == [.function] && key == kcDownArrow {
@@ -106,7 +106,7 @@ class TerminalTextView: NSTextView {
             Log.warn("History not implemented.")
         }
 
-        return .unhandled
+        return false
     }
 
     private func forwardHistory() {

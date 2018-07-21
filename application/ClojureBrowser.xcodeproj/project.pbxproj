@@ -21,7 +21,6 @@
 		53F722D420F130F900E0BBDC /* PrefsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D220F130F900E0BBDC /* PrefsViewController.swift */; };
 		53F722D720F13C4700E0BBDC /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D620F13C4700E0BBDC /* Log.swift */; };
 		53F722DA20F17A3900E0BBDC /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F722D920F17A3900E0BBDC /* Net.swift */; };
-		DE52C03C20FC2E8000A830D5 /* Keyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE52C03B20FC2E8000A830D5 /* Keyboard.swift */; };
 		DE8BAACE20FEFA09000D371B /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8BAACD20FEFA09000D371B /* History.swift */; };
 		DEE2C89520FB8C58000FF918 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEE2C89420FB8C58000FF918 /* Style.swift */; };
 		DEECF46520F8735600DB3083 /* TerminalTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEECF46420F8735600DB3083 /* TerminalTextView.swift */; };
@@ -45,7 +44,6 @@
 		53F722D220F130F900E0BBDC /* PrefsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsViewController.swift; sourceTree = "<group>"; };
 		53F722D620F13C4700E0BBDC /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		53F722D920F17A3900E0BBDC /* Net.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
-		DE52C03B20FC2E8000A830D5 /* Keyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keyboard.swift; sourceTree = "<group>"; };
 		DE8BAACD20FEFA09000D371B /* History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = History.swift; sourceTree = "<group>"; };
 		DEE2C89420FB8C58000FF918 /* Style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style.swift; sourceTree = "<group>"; };
 		DEECF46420F8735600DB3083 /* TerminalTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTextView.swift; sourceTree = "<group>"; };
@@ -131,7 +129,6 @@
 				53F722D920F17A3900E0BBDC /* Net.swift */,
 				539729DB20F6BBBB00D97205 /* Notify.swift */,
 				DEE2C89420FB8C58000FF918 /* Style.swift */,
-				DE52C03B20FC2E8000A830D5 /* Keyboard.swift */,
 				DE8BAACD20FEFA09000D371B /* History.swift */,
 			);
 			path = Library;
@@ -220,7 +217,6 @@
 				DEE2C89520FB8C58000FF918 /* Style.swift in Sources */,
 				53F233B120F2A12F00891128 /* ReplRequest.swift in Sources */,
 				5374A89420EB28770083CC15 /* AppDelegate.swift in Sources */,
-				DE52C03C20FC2E8000A830D5 /* Keyboard.swift in Sources */,
 				53F722D720F13C4700E0BBDC /* Log.swift in Sources */,
 				539729DC20F6BBBB00D97205 /* Notify.swift in Sources */,
 				DE8BAACE20FEFA09000D371B /* History.swift in Sources */,
