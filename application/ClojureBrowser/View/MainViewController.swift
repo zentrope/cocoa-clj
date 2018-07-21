@@ -41,7 +41,7 @@ class MainViewController: NSViewController {
 extension MainViewController: TerminalTextViewDelegate {
 
     func getBanner() -> NSAttributedString {
-        return Style.apply(";; Hello Clojure Browser\n", style: .banner)
+        return Style.apply(";;\n;; Hello Clojure Browser\n;;\n", style: .banner)
     }
 
     func getPrompt() -> NSAttributedString {

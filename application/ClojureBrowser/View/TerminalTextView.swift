@@ -247,7 +247,6 @@ private struct KeyEvent {
     static func op(event: NSEvent) -> KeyFunction {
         let flags = event.modifierFlags.intersection([.function, .command])
         let key = Int(event.keyCode)
-        print(key)
 
         switch (key, flags) {
         case (36, let f) where f == []:
