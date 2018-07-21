@@ -609,6 +609,38 @@ Gw
                                                                         <outlet property="textField" destination="dzi-Bu-R8o" id="llR-SH-ffn"/>
                                                                     </connections>
                                                                 </tableCellView>
+                                                                <tableCellView identifier="DataCell2" id="BYc-1B-5FB">
+                                                                    <rect key="frame" x="1" y="34" width="247" height="17"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6Em-vH-8SR">
+                                                                            <rect key="frame" x="0.0" y="0.0" width="228" height="17"/>
+                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" identifier="TextCell" title="DataCell2" id="MGI-7a-Zlu">
+                                                                                <font key="font" metaFont="system"/>
+                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                            </textFieldCell>
+                                                                        </textField>
+                                                                        <imageView translatesAutoresizingMaskIntoConstraints="NO" id="52k-Hm-zjP">
+                                                                            <rect key="frame" x="228" y="9" width="17" height="0.0"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="width" constant="17" id="Opa-JL-GGd"/>
+                                                                            </constraints>
+                                                                            <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" id="1jr-zz-wew"/>
+                                                                        </imageView>
+                                                                    </subviews>
+                                                                    <constraints>
+                                                                        <constraint firstItem="6Em-vH-8SR" firstAttribute="centerY" secondItem="BYc-1B-5FB" secondAttribute="centerY" id="DXq-mv-PqO"/>
+                                                                        <constraint firstItem="52k-Hm-zjP" firstAttribute="leading" secondItem="6Em-vH-8SR" secondAttribute="trailing" constant="2" id="P5C-v7-pUv"/>
+                                                                        <constraint firstAttribute="trailing" secondItem="52k-Hm-zjP" secondAttribute="trailing" constant="2" id="XMc-TA-sUu"/>
+                                                                        <constraint firstItem="6Em-vH-8SR" firstAttribute="leading" secondItem="BYc-1B-5FB" secondAttribute="leading" constant="2" id="hWK-3d-GeO"/>
+                                                                        <constraint firstItem="52k-Hm-zjP" firstAttribute="centerY" secondItem="BYc-1B-5FB" secondAttribute="centerY" id="wOP-St-vKy"/>
+                                                                    </constraints>
+                                                                    <connections>
+                                                                        <outlet property="imageView" destination="52k-Hm-zjP" id="vmf-cy-Psn"/>
+                                                                        <outlet property="textField" destination="6Em-vH-8SR" id="cby-QL-Nxh"/>
+                                                                    </connections>
+                                                                </tableCellView>
                                                             </prototypeCellViews>
                                                         </tableColumn>
                                                     </tableColumns>

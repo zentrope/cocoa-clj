@@ -211,7 +211,7 @@ extension SidebarViewController: NSOutlineViewDelegate {
             case .header:
                 return NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
             case .data:
-                return NSUserInterfaceItemIdentifier(rawValue: "DataCell")
+                return NSUserInterfaceItemIdentifier(rawValue: "DataCell2")
             }
         }
     }
