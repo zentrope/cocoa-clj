@@ -25,11 +25,7 @@ class TerminalTextView: NSTextView {
     private var keyboardEventMonitor: Any? = nil
 
     var termDelegate: TerminalTextViewDelegate? {
-        didSet {
-            if let b = termDelegate?.getBanner() {
-                display(b)
-            }
-        }
+        didSet { clear() }
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -95,10 +91,17 @@ class TerminalTextView: NSTextView {
             return selectedRange().length == 0 && ((selectedRange().location - 1) < cmdRange().location)
 
         case .down:
-            forwardHistory()
+            if let newCmd = history.getNext() {
+                replaceCommand(newCmd)
+            }
 
         case .up:
-            backwardHistory()
+            if let newCmd = history.getPrev() {
+                replaceCommand(newCmd)
+            }
+
+        case .clear:
+            clear()
 
         case .other:
             return false
@@ -106,16 +109,10 @@ class TerminalTextView: NSTextView {
         return true
     }
 
-    private func forwardHistory() {
-        if let newCmd = history.getNext() {
-            replaceCommand(newCmd)
-        }
-    }
-
-    private func backwardHistory() {
-        if let newCmd = history.getPrev() {
-            replaceCommand(newCmd)
-        }
+    private func clear() {
+        let banner = termDelegate?.getBanner() ?? NSAttributedString(string:"")
+        textStorage?.setAttributedString(banner)
+        prompt()
     }
 
     private func prompt() {
@@ -244,12 +241,13 @@ extension TerminalTextView: NSTextViewDelegate {
 private struct KeyEvent {
 
     enum KeyFunction {
-        case enter, delete, down, up, other
+        case enter, delete, down, up, clear, other
     }
 
     static func op(event: NSEvent) -> KeyFunction {
-        let flags = event.modifierFlags.intersection([.function])
+        let flags = event.modifierFlags.intersection([.function, .command])
         let key = Int(event.keyCode)
+        print(key)
 
         switch (key, flags) {
         case (36, let f) where f == []:
@@ -260,9 +258,10 @@ private struct KeyEvent {
             return .down
         case (126, let f) where f == [.function]:
             return .up
+        case (40, let f) where f == [.command]:
+            return .clear
         default:
             return .other
         }
     }
 }
-
