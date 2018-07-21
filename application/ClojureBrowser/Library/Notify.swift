@@ -16,10 +16,6 @@ protocol NamespaceDataReceiver: class {
     func receive(namespaces: [CLJNameSpace])
 }
 
-protocol SymbolsDataReceiver: class {
-    func receive(symbols: [CLJSymbol], forNamespace ns: CLJNameSpace)
-}
-
 protocol EvalDataReceiver: class {
     func receive(response: ReplResponse)
 }
@@ -65,13 +61,6 @@ class Notify {
         withSync { c in
             guard let handler = c as? NamespaceDataReceiver else { return }
             DispatchQueue.main.async { handler.receive(namespaces: nss) }
-        }
-    }
-
-    func deliverSymbols(symbols syms: [CLJSymbol], inNamespace ns: CLJNameSpace) {
-        withSync { c in
-            guard let handler = c as? SymbolsDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(symbols: syms, forNamespace: ns) }
         }
     }
 

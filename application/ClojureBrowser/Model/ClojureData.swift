@@ -10,7 +10,7 @@ import Foundation
 
 struct ClojureData {
 
-    static func decodeNameSpace(jsonString: String) -> [CLJNameSpace] {
+    static func decodeNameSpaces(jsonString: String) -> [CLJNameSpace] {
         let jsonData = jsonString.data(using: .utf8)!
         let decoder = JSONDecoder()
 
@@ -23,22 +23,6 @@ struct ClojureData {
             Log.error("data \(jsonString)")
             Log.error(error.localizedDescription)
             return [CLJNameSpace]()
-        }
-    }
-
-    static func decodeSymbols(jsonString: String) -> [CLJSymbol] {
-        let jsonData = jsonString.data(using: .utf8)!
-        let decoder = JSONDecoder()
-
-        do {
-            let namespaces = try decoder.decode([CLJSymbol].self, from: jsonData)
-            return namespaces
-        }
-
-        catch let error {
-            Log.error("data \(jsonString)")
-            Log.error(error.localizedDescription)
-            return [CLJSymbol]()
         }
     }
 
@@ -63,40 +47,39 @@ struct CLJSource : Codable {
 }
 
 class CLJNameSpace : Codable {
-    // Has to be a class if used in NSOutlineView
     var name: String
+    private var interns: [CLJSymbol]
+
+    lazy var symbols: [CLJSymbol] = {
+        let privs = interns.filter { $0.isPrivate }
+        let pubs  = interns.filter { !$0.isPrivate }
+        return pubs + privs
+    }()
+
+    lazy var publics: [CLJSymbol] = {
+        return symbols.filter { !$0.isPrivate }
+    }()
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case interns = "symbols"
+    }
 }
 
-struct CLJSymbol : Codable {
-
-    var name: String
+class CLJSymbol : Codable {
     var ns: String
-
-    var line: Int?
-    var column: Int?
-    var file: String?
-    var doc: String?
-    var added: String?
-    var deprecated: String?
-
-    var isPrivate: Bool?
-    var isMacro: Bool?
-    var isStatic: Bool?
-    var isDynamic: Bool?
+    var name: String
+    var isPrivate: Bool
+    var isMacro: Bool
+    var isDynamic: Bool
+    var isDeprecated: Bool
 
     enum CodingKeys : String, CodingKey {
         case name
         case ns
-
-        case line
-        case column
-        case file
-        case doc
-        case deprecated
-
         case isPrivate = "private"
         case isMacro = "macro"
-        case isStatic = "static"
+        case isDeprecated = "deprecated"
         case isDynamic = "dynamic"
     }
 }

@@ -32,23 +32,12 @@ struct Net {
     }
 
     static func getNameSpaces(site: String) {
-        invokeRequest(to: site, withBody: ReplRequest.getNameSpaces()) { error, text in
+        invokeRequest(to: site, withBody: ReplRequest.getNamespaces()) { error, text in
             if let e = error { Notify.shared.deliverError(error: e); return }
 
             if let t = text {
-                let nss = ClojureData.decodeNameSpace(jsonString: t)
+                let nss = ClojureData.decodeNameSpaces(jsonString: t)
                 Notify.shared.deliverNamespaces(namespaces: nss)
-            }
-        }
-    }
-
-    static func getSymbols(from: String, inNamespace ns: CLJNameSpace) {
-        invokeRequest(to: from, withBody: ReplRequest.getSymbols(inNs: ns)) { error, text in
-            if let e = error { Notify.shared.deliverError(error: e); return }
-
-            if let t = text {
-                let syms = ClojureData.decodeSymbols(jsonString: t)
-                Notify.shared.deliverSymbols(symbols: syms, inNamespace: ns)
             }
         }
     }

@@ -50,6 +50,12 @@ struct Prefs {
         prefs.save()
     }
 
+    static var serverUrl: String {
+        get {
+            return Prefs().replUrl
+        }
+    }
+
     var replUrl: String {
         get {
             var u = URLComponents()

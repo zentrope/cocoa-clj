@@ -27,6 +27,29 @@
 
 ;;; Repl Client Handlers
 
+(def ^:private reasonable
+  [:ns :name :dynamic :private :macro :deprecated])
+
+(def ^:private defaults
+  {:private false :macro false :dynamic false :deprecated false})
+
+(defn- munge-symbols
+  [symbol-map]
+  (let [m (merge defaults (select-keys symbol-map reasonable))]
+    (if (string? (:deprecated m))
+      (assoc m :deprecated true)
+      m)))
+
+(defn- resolve-symbols
+  [namespace]
+  (->> (symbol namespace)
+       ns-interns
+       vals
+       (mapv meta)
+       (mapv #(assoc % :ns (.getName (:ns %))))
+       (mapv #(munge-symbols %))
+       (sort-by :name)))
+
 (defmulti ^:private repl-op
   (fn [repl cmd]
     (:op cmd)))
@@ -39,8 +62,12 @@
   (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
     (doall (repl/message (:client repl) msg))))
 
-(defmethod repl-op "nss" [repl _]
-  (->> (all-ns) (mapv (memfn getName)) sort (mapv #(hash-map :name %))))
+(defmethod repl-op "ns-all" [repl _]
+  (->> (all-ns)
+       (mapv (memfn getName))
+       sort
+       (mapv #(hash-map :name %))
+       (mapv #(assoc % :symbols (resolve-symbols (:name %))))))
 
 (defmethod repl-op "ping" [repl _]
   {:op :ping :data :pong})
@@ -49,20 +76,14 @@
   {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
                (format "Source for '%s' not found." (:symbol cmd)))})
 
-(def ^:private reasonable
-  [:ns :name
-   :file :column :line                  ; location
-   :dynamic :private :macro             ; bools
-   :deprecated])                        ; interesting
-
-(defmethod repl-op "ns" [repl cmd]
-  (->> (symbol (:name cmd))
-       ns-interns
-       vals
-       (mapv meta)
-       (mapv #(assoc % :ns (.getName (:ns %))))
-       (mapv #(select-keys % reasonable))
-       (sort-by :name)))
+;; (defmethod repl-op "ns" [repl cmd]
+;;   (->> (symbol (:name cmd))
+;;        ns-interns
+;;        vals
+;;        (mapv meta)
+;;        (mapv #(assoc % :ns (.getName (:ns %))))
+;;        (mapv #(select-keys % reasonable))
+;;        (sort-by :name)))
 
 ;;; Web Handlers
 
@@ -103,7 +124,7 @@
       "/repl" (repl request repl-client)
       (not-found request))
     (catch Throwable t
-      (println " !" (.getMessage t))
+      (println "   !" (.getMessage t))
       {:status 500 :body (.getMessage t) :headers {"content-type" "text/plain"}})))
 
 ;;; Configuration

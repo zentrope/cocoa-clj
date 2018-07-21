@@ -18,12 +18,8 @@ struct ReplRequest {
         return encode(op: ReplData(op: .ping))
     }
 
-    static func getNameSpaces() -> String {
-        return encode(op: ReplData(op: .nss))
-    }
-
-    static func getSymbols(inNs ns: CLJNameSpace) -> String {
-        return encode(op: ReplData(op: .ns, name: ns.name))
+    static func getNamespaces() -> String {
+        return encode(op: ReplData(op: .nsAll))
     }
 
     static func getSource(forSymbol sym: CLJSymbol) -> String {
@@ -39,7 +35,7 @@ struct ReplRequest {
 }
 
 fileprivate enum ReplOp: String, Codable {
-    case ping, eval, nss, ns, source
+    case ping, eval, nsAll = "ns-all", source
 }
 
 fileprivate struct ReplData : Codable {
@@ -51,11 +47,6 @@ fileprivate struct ReplData : Codable {
     init(op: ReplOp, expr: String) {
         self.op = op
         self.expr = expr
-    }
-
-    init(op: ReplOp, name: String) {
-        self.op = op
-        self.name = name
     }
 
     init(op: ReplOp, symbol: String) {

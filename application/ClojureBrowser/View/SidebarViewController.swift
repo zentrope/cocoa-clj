@@ -8,87 +8,49 @@
 
 import Cocoa
 
-class SidebarViewController: NSViewController {
+class SidebarGroup {
+    var name: String
+    var namespaces: [CLJNameSpace]
 
-    // MARK: - Outlets
+    init(_ aName: String) {
+        name = aName
+        namespaces = [CLJNameSpace]()
+    }
+}
+
+// MARK: - Main
+
+class SidebarViewController: NSViewController {
 
     @IBOutlet weak var outlineView: NSOutlineView!
     @IBOutlet weak var searchField: NSSearchField!
     @IBOutlet weak var publicFilterButton: NSButton!
 
-    // MARK: - Data
+    var appGroup = SidebarGroup("Application")
+    var libGroup = SidebarGroup("Libraries")
+    var cloGroup = SidebarGroup("Clojure")
 
-    var namespaces = [CLJNameSpace]()
-    var symbols = [String: [CLJSymbol]]()
-    var filteredNamespaces = [CLJNameSpace]()
-    var filter = ""
-    var showOnlyPublic = false
+    var showOnlyPublic = true
 
-    // MARK: - Controller
+    lazy var groups = { return [appGroup, libGroup, cloGroup] }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         Notify.shared.register(receiver: self)
         loadNamespaces()
-        filter = ""
-        showOnlyPublic = publicFilterButton.state == NSControl.StateValue.on
+        showOnlyPublic = publicFilterButton.state == .on
     }
 
     override func viewWillDisappear() {
         Notify.shared.unregister(receiver: self)
     }
 
-    // MARK: - Implementation
-
-    private func reset() {
-        filter = ""
-        self.searchField.stringValue = ""
-        self.filteredNamespaces = self.filterNamespaces()
-        self.symbols.removeAll()
-        self.outlineView.reloadData()
-    }
-
-    private func filterNamespaces() -> [CLJNameSpace] {
-        if namespaces.isEmpty {
-            return self.namespaces
-        }
-
-        if filter.isEmpty {
-            return self.namespaces
-        }
-
-        let term = filter.lowercased()
-        return namespaces.filter({ ns in ns.name.contains(term) })
-    }
-
     private func loadNamespaces() {
-        Net.getNameSpaces(site: Prefs().replUrl)
+        Net.getNameSpaces(site: Prefs.serverUrl)
     }
 
-    private func loadSymbols(namespace: CLJNameSpace) {
-        if self.symbols[namespace.name] != nil {
-            return
-        }
-        Net.getSymbols(from: Prefs().replUrl, inNamespace: namespace)
-    }
-
-    func findSymbols(inNamespace name: String) -> [CLJSymbol] {
-        guard let syms = symbols[name] else {
-            return [CLJSymbol]()
-        }
-
-        if showOnlyPublic {
-            return syms.filter({ s in !(s.isPrivate ?? false) })
-        }
-        return syms
-    }
-
-    // MARK: - Actions
-    
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
-        self.filter = sender.stringValue
-        self.filteredNamespaces = self.filterNamespaces()
-        self.outlineView.reloadData()
+        Log.warn("Search/filter not implemented.")
     }
 
     @IBAction func refreshButtonClicked(_ sender: NSButton) {
@@ -108,109 +70,151 @@ class SidebarViewController: NSViewController {
     }
 }
 
-extension SidebarViewController: NamespaceDataReceiver, SymbolsDataReceiver {
+// MARK: - ServerDataReceiver elegates
 
-    func receive(symbols: [CLJSymbol], forNamespace ns: CLJNameSpace) {
-        let pubs = symbols.filter({ s in !(s.isPrivate ?? false)})
-        let privs = symbols.filter({ s in (s.isPrivate ?? false)})
-        self.symbols[ns.name] = pubs + privs
-        self.outlineView.reloadItem(ns, reloadChildren: true)
-    }
+extension SidebarViewController: NamespaceDataReceiver {
 
     func receive(namespaces: [CLJNameSpace]) {
-        self.namespaces = namespaces
-        self.reset()
+        cloGroup.namespaces = namespaces.filter { $0.name.hasPrefix("clojure.")}
+        appGroup.namespaces = namespaces.filter { $0.name == "user" }
+        libGroup.namespaces = namespaces.filter { $0.name != "user" && !$0.name.hasPrefix("clojure.")}
+
+        outlineView.reloadData()
     }
 }
+
+// MARK: - NSOutlineViewDataSource delegate
 
 extension SidebarViewController: NSOutlineViewDataSource {
 
-    // MARK: - Outline datasource delegate
-
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
 
-        let nss = self.filteredNamespaces
+        switch item {
 
-        if item == nil {
-            return nss.count
+        case let group as SidebarGroup:
+            return group.namespaces.count
+
+        case let namespace as CLJNameSpace:
+            if showOnlyPublic {
+                return namespace.publics.count
+            }
+            return namespace.symbols.count
+
+        default:
+            return item == nil ? groups.count : 0
         }
-
-        if let ns = item as? CLJNameSpace {
-            return findSymbols(inNamespace: ns.name).count
-        }
-
-        return 0
     }
 
     func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
-        if let ns = item as? CLJNameSpace {
-            return findSymbols(inNamespace: ns.name)[index]
-            //return symbols[ns.name]![index]
-        }
 
-        let nss = self.filteredNamespaces
-        return nss[index]
+        switch item {
+
+        case let group as SidebarGroup:
+            return group.namespaces[index]
+
+        case let namespace as CLJNameSpace:
+            if showOnlyPublic {
+                return namespace.publics[index]
+            }
+            return namespace.symbols[index]
+
+        default:
+            return groups[index]
+        }
     }
 
     func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
-        if item is CLJNameSpace {
+
+        switch item {
+
+        case _ as SidebarGroup:
             return true
+
+        case let namespace as CLJNameSpace:
+            if showOnlyPublic {
+                return namespace.publics.count != 0
+            }
+            return namespace.symbols.count != 0
+
+        case _ as CLJSymbol:
+            return false
+
+        default:
+            return false
         }
-        return false
     }
 }
+
+// MARK: - NSOutlineView delegate
 
 extension SidebarViewController: NSOutlineViewDelegate {
 
-    // MARK: - Outline view delegate
-
-    func outlineViewItemDidExpand(_ notification: Notification) {
-        if let ns = notification.userInfo?["NSObject"] as? CLJNameSpace {
-            loadSymbols(namespace: ns)
-        }
-    }
-
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
 
-        // TODO: Revise all this with better cell layouts
+        switch item {
 
-        var view: NSTableCellView?
+        case let group as SidebarGroup:
+            return makeCell(type: .header, label: group.name, image: nil)
 
-        if let sym = item as? CLJSymbol {
+        case let namespace as CLJNameSpace:
+            return makeCell(type: .data, label: namespace.name, image: nil)
 
-            if sym.isPrivate ?? false {
-                let identifier = NSUserInterfaceItemIdentifier(rawValue: "DataCell")
+        case let symbol as CLJSymbol:
+            let icon = symbol.isPrivate ? NSImage(named: NSImage.lockLockedTemplateName) : nil
+            return makeCell(type: .data, label: symbol.name, image: icon)
 
-                view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
-                if let imageThing = view?.imageView {
-                    imageThing.image = NSImage(named: NSImage.lockLockedTemplateName)
-                    imageThing.sizeToFit()
-                }
-
-            } else {
-
-                let identifier = NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
-
-                view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
-
-            }
-            if let textField = view?.textField {
-                textField.stringValue = sym.name
-                textField.sizeToFit()
-            }
+        default:
+            break
         }
+        return nil
+    }
 
-        else if let ns = item as? CLJNameSpace {
-            let identifier = NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
-
-            view = outlineView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView
-
-            if let textField = view?.textField {
-                textField.stringValue = ns.name
-                textField.sizeToFit()
-            }
+    private func setLabel(inView view: NSTableCellView?, to text: String) {
+        if let textField = view?.textField {
+            textField.stringValue = text
+            textField.sizeToFit()
         }
+    }
 
+    private func setImage(inView view: NSTableCellView?, to image: NSImage?) {
+        if let imageView = view?.imageView {
+            imageView.image = image
+            imageView.sizeToFit()
+        }
+    }
+
+    private func makeCell(type: CellType, label: String, image: NSImage?) -> NSTableCellView? {
+        let view = outlineView.makeView(withIdentifier: type.rawValue, owner: self) as? NSTableCellView
+        setLabel(inView: view, to: label)
+        setImage(inView: view, to: image)
         return view
     }
+
+    private enum CellType: RawRepresentable {
+
+        case header, data
+
+        typealias RawValue = NSUserInterfaceItemIdentifier
+
+        init?(rawValue: NSUserInterfaceItemIdentifier) {
+            if rawValue.rawValue == "header" {
+                self = .header
+            }
+            if rawValue.rawValue == "data" {
+                self = .data
+            }
+            return nil
+        }
+
+        var rawValue: NSUserInterfaceItemIdentifier {
+            switch self {
+            case .header:
+                return NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
+            case .data:
+                return NSUserInterfaceItemIdentifier(rawValue: "DataCell")
+            }
+        }
+    }
 }
+
+
