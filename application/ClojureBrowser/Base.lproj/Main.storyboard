@@ -127,19 +127,19 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Edit" autoenablesItems="NO" id="W48-6f-4Dl">
                                     <items>
-                                        <menuItem title="Cut" enabled="NO" keyEquivalent="x" id="uRl-iY-unG">
+                                        <menuItem title="Cut" keyEquivalent="x" id="uRl-iY-unG">
                                             <connections>
-                                                <action selector="cutMenuItemClicked:" target="Ady-hI-5gd" id="0GM-c0-xHz"/>
+                                                <action selector="cut:" target="Ady-hI-5gd" id="kSj-On-Yc7"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Copy" enabled="NO" keyEquivalent="c" id="x3v-GG-iWU">
+                                        <menuItem title="Copy" keyEquivalent="c" id="x3v-GG-iWU">
                                             <connections>
-                                                <action selector="copyMenuItemClicked:" target="Ady-hI-5gd" id="Ffk-Oh-5yB"/>
+                                                <action selector="copy:" target="Ady-hI-5gd" id="X6C-Fu-rMS"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Paste" enabled="NO" keyEquivalent="v" id="gVA-U4-sdL">
+                                        <menuItem title="Paste" keyEquivalent="v" id="gVA-U4-sdL">
                                             <connections>
-                                                <action selector="pasteMenuItemClicked:" target="Ady-hI-5gd" id="XlN-UH-C1B"/>
+                                                <action selector="paste:" target="Ady-hI-5gd" id="2BA-33-brt"/>
                                             </connections>
                                         </menuItem>
                                     </items>
@@ -220,13 +220,7 @@
                         <outlet property="delegate" destination="Voe-Tx-rLC" id="PrD-fu-P6m"/>
                     </connections>
                 </application>
-                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="ClojureBrowser" customModuleProvider="target">
-                    <connections>
-                        <outlet property="copyMenuItem" destination="x3v-GG-iWU" id="97J-Yc-vFn"/>
-                        <outlet property="cutMenuItem" destination="uRl-iY-unG" id="Tqz-0u-R7y"/>
-                        <outlet property="pasteMenuItem" destination="gVA-U4-sdL" id="eJt-jf-eHU"/>
-                    </connections>
-                </customObject>
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="ClojureBrowser" customModuleProvider="target"/>
                 <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -715,7 +709,7 @@ Gw
                                     <rect key="frame" x="0.0" y="0.0" width="562" height="625"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" smartInsertDelete="YES" id="BkK-XX-bXf" customClass="TerminalTextView" customModule="ClojureBrowser" customModuleProvider="target">
+                                        <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" id="BkK-XX-bXf" customClass="TerminalTextView" customModule="ClojureBrowser" customModuleProvider="target">
                                             <rect key="frame" x="0.0" y="0.0" width="546" height="625"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>

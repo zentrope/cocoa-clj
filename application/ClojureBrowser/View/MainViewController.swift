@@ -8,7 +8,7 @@
 
 import Cocoa
 
-// MARK: - View Controller Overrides
+// MARK: - Main
 
 class MainViewController: NSViewController {
 
@@ -21,9 +21,6 @@ class MainViewController: NSViewController {
 
         Notify.shared.register(receiver: self)
         terminal.termDelegate = self
-        if let appDel = NSApplication.shared.delegate as? TerminalCutCopyPasteDelegate {
-            terminal.clipboardDelegate = appDel
-        }
     }
 
     override func viewWillAppear() {
@@ -37,21 +34,9 @@ class MainViewController: NSViewController {
         super.viewWillDisappear()
         Notify.shared.unregister(receiver: self)
     }
-
-    @IBAction func cutMenuItemClicked(_ sender: NSMenuItem) {
-        terminal.invokeCut()
-    }
-
-    @IBAction func copyMenuItemClicked(_ sender: NSMenuItem) {
-        terminal.invokeCopy()
-    }
-
-    @IBAction func pasteMenuItemClicked(_ sender: NSMenuItem) {
-        terminal.invokePaste()
-    }
 }
 
-// MARK: - Terminal delegate
+// MARK: - TerminalTextView delegate
 
 extension MainViewController: TerminalTextViewDelegate {
 
@@ -61,11 +46,10 @@ extension MainViewController: TerminalTextViewDelegate {
 
     func getPrompt() -> NSAttributedString {
         let ns = Style.apply(currentNamespace, style: .namespace)
-        let pointer = Style.apply(" $ ", style: .prompt)
+        let pointer = Style.apply(" > ", style: .prompt)
         let prompt = NSMutableAttributedString(attributedString: ns)
         prompt.append(pointer)
         return prompt
-        //return Style.apply(prompt, style: .prompt)
     }
 
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString {

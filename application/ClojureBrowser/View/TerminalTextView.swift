@@ -17,27 +17,13 @@ protocol TerminalTextViewDelegate {
     func styleCommand(cmd: String, sender: TerminalTextView) -> NSAttributedString
 }
 
-protocol TerminalCutCopyPasteDelegate {
-    func setCutCopyPaste(cut: Bool, copy: Bool, paste: Bool)
-    func setCutMenu(on: Bool)
-    func setCopyMenu(on: Bool)
-    func setPasteMenu(on: Bool)
-}
-
 // MARK: - Main
 
 class TerminalTextView: NSTextView {
 
-    var history = History()
-    var keyboardEventMonitor: Any? = nil
-    var cursorPosition: Int = 0
+    private var history = History()
+    private var keyboardEventMonitor: Any? = nil
 
-    var clipboardDelegate: TerminalCutCopyPasteDelegate? {
-        didSet {
-            clipboardDelegate?.setCutCopyPaste(cut: false, copy: false, paste: isPasteAvailable())
-        }
-    }
-    
     var termDelegate: TerminalTextViewDelegate? {
         didSet {
             if let b = termDelegate?.getBanner() {
@@ -48,31 +34,6 @@ class TerminalTextView: NSTextView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-
-        // Don't draw a cursor if a selection is in progress
-        if selectedRange().length > 0 {
-            return
-        }
-
-        guard let layoutManager = self.layoutManager,
-            let textContainer = self.textContainer else {
-                return
-        }
-
-        let color = insertionPointColor
-        let cursor = NSMakeRange(cmdRange().location + cursorPosition - 1, 1)
-
-        let textRange = layoutManager.glyphRange(forCharacterRange: cursor, actualCharacterRange: nil)
-        var layoutRect = layoutManager.boundingRect(forGlyphRange: textRange, in: textContainer)
-
-        let containerOrigin = textContainerOrigin
-        layoutRect.origin.x += containerOrigin.x - 1 + layoutRect.size.width
-        layoutRect.origin.y += containerOrigin.y - 1
-
-        layoutRect.size.width = 1.0
-        layoutRect.size.height += 2.0
-
-        drawInsertionPoint(in: layoutRect, color: color, turnedOn: true)
     }
 
     override init(frame: NSRect, textContainer: NSTextContainer?) {
@@ -86,12 +47,17 @@ class TerminalTextView: NSTextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
+        self.isEditable = true
+        self.isAutomaticQuoteSubstitutionEnabled = false
+        self.isAutomaticTextCompletionEnabled = false
+        self.isAutomaticTextReplacementEnabled = false
+        self.isAutomaticDashSubstitutionEnabled = false
+        self.smartInsertDeleteEnabled = false
+
         self.delegate = self
         self.textContainerInset = NSSize(width: 10.0, height: 10.0)
 
         NSPasteboard.general.declareTypes([.string], owner: self)
-
-        clear()
     }
 
     override var acceptsFirstResponder: Bool {
@@ -99,105 +65,53 @@ class TerminalTextView: NSTextView {
     }
 
     override func becomeFirstResponder() -> Bool {
-        Log.info("Terminal is active.")
-        if let storage = textStorage {
-            if storage.length < 1 {
-                prompt()
-            }
+        if (textStorage?.length ?? 0) < 1 {
+            prompt()
         }
         self.keyboardEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             return self.handleKeyDown(with: $0) == .handled ? nil : $0
         }
+        self.updateInsertionPointStateAndRestartTimer(true)
         return true
     }
 
     override func resignFirstResponder() -> Bool {
-        Log.info("Terminal is inactive.")
         if let mon = self.keyboardEventMonitor {
             NSEvent.removeMonitor(mon)
         }
         return true
     }
-}
-
-// MARK: - Keyboard readline-ish
-
-extension TerminalTextView {
 
     private func handleKeyDown(with theEvent: NSEvent) -> KeyEventResult {
 
-        let keyEvent = KeyEvent(event: theEvent)
+        let kcReturnKey  =  36
+        let kcDownArrow  = 125
+        let kcUpArrow    = 126
 
-        switch keyEvent.op() {
+        let key = Int(theEvent.keyCode)
+        let flags = theEvent.modifierFlags.intersection([.function])
 
-        case .enter:       enter()
-        case .right:       forwardChar()
-        case .left:        backwardChar()
-        case .home:        beginningOfLine()
-        case .end:         endOfLine()
-        case .delete:      backspace()
-        case .clear:       clear(); prompt()
-        case .killLine:    killLine()
-        case .value:       insert(keyEvent.chs); dispatchStyleCommand()
-        case .up:          backwardHistory()
-        case .down:        forwardHistory()
-        case .unknown:     Log.info(keyEvent.describe()); return .unhandled
-
-        // Let NSTextView draw the selection via shift right/left arrow. The
-        // text view delegate will adjust the cursor as needed if the selection
-        // is in the command area.
-        case .selectLeft:  return .unhandled
-        case .selectRight: return .unhandled
-
-        // If a delegate has been set, let it handle cut/copy/paste invocation.
-        // This allows for menu item flashes, sounds, etc.
-        case .cut:   if clipboardDelegate == nil { cutRegion() } else { return .unhandled }
-        case .copy:  if clipboardDelegate == nil { copyRegion() } else { return .unhandled }
-        case .paste: if clipboardDelegate == nil { pasteRegion() } else { return .unhandled }
-        }
-
-        clipboardDelegate?.setPasteMenu(on: isPasteAvailable())
-
-        if keyEvent.op() != .copy {
-            unselect()
-        }
-
-        if !keyEvent.isHistoryEvent() {
+        if flags.isEmpty && key == kcReturnKey {
             history.set(getCommandText() ?? "")
+            history.new("")
+            dispatchInvokeCommand()
+            return .handled
         }
 
-        putCursor()
-        return .handled
-    }
-
-    // MARK: - Cursor
-
-    private enum CursorToggle {
-        case on, off
-    }
-
-    private func putCursor() {
-        // NSTextView's pointer is the first selected range with a zero length.
-        // This is here so that the keyboard select region works leveraging
-        // NSTextView rather than custom code.
-        let r = cmdRange()
-        setSelectedRange(NSMakeRange(r.location + cursorPosition, 0))
-    }
-
-    private func moveCursor(to newPos: Int) {
-        let cmd = cmdRange()
-        if newPos < 0 {
-            cursorPosition = 0
-        } else if newPos > cmd.length {
-            cursorPosition = cmd.length
-        } else {
-            cursorPosition = newPos
+        if flags == [.function] && key == kcDownArrow {
+            Log.warn("History not implemented.")
         }
-        needsDisplay = true
+
+        if flags == [.function] && key == kcUpArrow {
+            Log.warn("History not implemented.")
+        }
+
+        return .unhandled
     }
 
     private func forwardHistory() {
         if let newCmd = history.getNext() {
+            print(newCmd)
             replaceCommand(newCmd)
         }
     }
@@ -208,150 +122,12 @@ extension TerminalTextView {
         }
     }
 
-    private func enter() {
-        history.set(getCommandText() ?? "")
-        history.new("")
-        dispatchInvokeCommand()
-    }
-
-    // MARK: - movement
-
-    private func beginningOfLine() {
-        moveCursor(to: 0)
-    }
-
-    private func endOfLine() {
-        moveCursor(to: cmdRange().length)
-    }
-
-    private func backwardChar() {
-
-        if isSelectedInCommand() {
-            let cmd = cmdRange()
-            let region = rangeOfSelectionInCmd()
-            unselect()
-            moveCursor(to: region.location - cmd.location - 1)
-            return
-        }
-
-        moveCursor(to: cursorPosition - 1)
-    }
-
-    private func forwardChar() {
-
-        if isSelectedInCommand() {
-            let cmd = cmdRange()
-            let region = rangeOfSelectionInCmd()
-            unselect()
-            moveCursor(to: (region.location + region.length) - cmd.location)
-            return
-        }
-
-        moveCursor(to: cursorPosition + 1)
-    }
-
-    private func backspace() {
-        if isEmpty() {
-            return
-        }
-
-        if isSelected() {
-            deleteRegion()
-            return
-        }
-
-        if atBeginningOfLine() {
-            return
-        }
-
-        let place = NSMakeRange(cmdRange().location + cursorPosition - 1, 1)
-        setSelectedRange(place)
-        deleteRegion()
-    }
-
-    // MARK: - region
-
-    private func deleteRegion() {
-        let region = rangeOfSelectionInCmd()
-        if region.location == NSNotFound { return }
-        textStorage?.deleteCharacters(in: region)
-
-        // If the entire command disappeared, reset it
-        if cmdRange().length == 0 {
-            replaceCommand(" ")
-            beginningOfLine()
-        }
-    }
-
-    private func cutRegion() {
-
-        let selection = rangeOfSelectionInCmd()
-        if selection.location == NSNotFound || selection.length == 0 { return }
-
-        let active = cmdRange()
-
-        if selection.location < active.location { return }
-        guard let storage = textStorage else { return }
-
-        let text = storage.mutableString.substring(with: selection)
-        let clipboard = NSPasteboard.general
-        clipboard.setString(text, forType: .string)
-
-        deleteRegion()
-        unselect()
-    }
-
-    private func copyRegion() {
-        let range = super.selectedRange()
-        if range.location == NSNotFound || range.length == 0 { return }
-        guard let storage = textStorage else { return }
-
-        let text = storage.mutableString.substring(with: range)
-        let clipboard = NSPasteboard.general
-        clipboard.setString(text, forType: .string)
-    }
-
-    private func pasteRegion() {
-        let cb = NSPasteboard.general
-        if let text = cb.string(forType: .string) {
-            insert(text.trimmingCharacters(in: .whitespacesAndNewlines))
-            dispatchStyleCommand()
-        }
-    }
-
-    // MARK: - editing
-
-    private func insert(_ chars: String) {
-        if isSelected() {
-            deleteRegion()
-        }
-        let range = cmdRange()
-        guard let storage = self.textStorage else { return }
-        storage.insert(NSAttributedString(string: chars), at: range.location + cursorPosition)
-        moveCursor(to: cursorPosition + chars.count)
-        scrollToEndOfDocument(self)
-    }
-
-    private func clear() {
-        guard let storage = self.textStorage else { return }
-        storage.mutableString.setString("")
-        moveCursor(to: 0)
-    }
-
-    /// Kill from the current postion to the end of the line
-    private func killLine() {
-        if isEmpty() { return }
-        let region = NSMakeRange(bufferPoint(), bufferSize() - bufferPoint())
-        setSelectedRange(region)
-        deleteRegion()
-    }
-
     private func prompt() {
         guard let storage = self.textStorage else { return }
         storage.append(NSAttributedString(string: "\n"))
         storage.append(dispatchGetPrompt())
-        moveCursor(to: 0)
         dispatchStyleCommand()
+        setSelectedRange(NSMakeRange(storage.length - 1, 0))
         scrollToEndOfDocument(self)
     }
 
@@ -362,69 +138,10 @@ extension TerminalTextView {
     }
 
     private func replaceCommand(_ cmd: String) {
-        let r = cmdRange()
-        if r.length > 0 {
-            setSelectedRange(r)
-            deleteRegion()
-            endOfLine()
-        }
-
-        insert(cmd.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard let storage = self.textStorage else { return }
+        let cmdRange = self.cmdRange()
+        storage.replaceCharacters(in: cmdRange, with: cmd.trimmingCharacters(in: .whitespacesAndNewlines))
         dispatchStyleCommand()
-        endOfLine()
-        scrollToEndOfDocument(self)
-    }
-
-    // MARK: - selection
-    
-    private func unselect() {
-        setSelectedRange(NSMakeRange(cmdRange().location + cursorPosition, 0))
-    }
-
-    private func isSelected() -> Bool {
-        let selection = self.selectedRange()
-        return selection.location != NSNotFound && selection.length != 0
-    }
-
-    private func isSelectedInCommand() -> Bool {
-        return rangeOfSelectionInCmd().location != NSNotFound
-    }
-
-    private func isPasteAvailable() -> Bool {
-        return NSPasteboard.general.string(forType: .string) != nil
-    }
-
-    private func rangeOfSelectionInCmd() -> NSRange {
-        let notFound = NSMakeRange(NSNotFound, 0)
-        let selection = selectedRange()
-        if selection.location == NSNotFound || selection.length == 0 { return notFound }
-
-        let active = cmdRange()
-
-        if selection.location < active.location { return notFound }
-        return selection
-    }
-
-    // MARK: - reading
-
-    private func bufferPoint() -> Int {
-        return cmdRange().location + cursorPosition
-    }
-
-    private func bufferSize() -> Int {
-        return textStorage?.length ?? 0
-    }
-
-    private func atBeginningOfLine() -> Bool {
-        return cursorPosition == 0
-    }
-
-    private func atEndOfLine() -> Bool {
-        return cursorPosition >= cmdRange().length
-    }
-
-    private func isEmpty() -> Bool {
-        return cmdRange().location == 0
     }
 
     private func getCommandText() -> String? {
@@ -436,8 +153,6 @@ extension TerminalTextView {
         return nil
     }
 
-    /// Return the region of the current `command` being edited.
-    /// - Returns: The range after the prompt to the end of the buffer
     private func cmdRange() -> NSRange {
 
         let empty = NSMakeRange(0, 0)
@@ -455,18 +170,6 @@ extension TerminalTextView {
         return NSMakeRange(location, length)
     }
 
-}
-
-// MARK: - Public API
-
-extension TerminalTextView {
-
-    /// Output the string to the buffer (as if the result of
-    /// the previous command).
-    ///
-    /// - Parameters:
-    ///     - output: The syntax highlighted string to display
-    ///
     func display(_ output: NSAttributedString) {
         newline()
         if (output.length > 0) {
@@ -476,25 +179,6 @@ extension TerminalTextView {
         }
         prompt()
     }
-
-    /// Invoke the pasteboard cut function. Use this when
-    /// hooking up menus.
-    func invokeCut() {
-        cutRegion()
-    }
-
-    /// Invoke the pasteboard copy function. Use this when
-    /// hooking up menus.
-    func invokeCopy() {
-        copyRegion()
-    }
-
-    /// Invoke the pasteboard paste function. Use this when
-    /// hooking up menus.
-    func invokePaste() {
-        pasteRegion()
-    }
-
 }
 
 // MARK: - Delegate dispatch commands
@@ -532,17 +216,23 @@ extension TerminalTextView {
 
 extension TerminalTextView: NSTextViewDelegate {
 
+    func textDidChange(_ notification: Notification) {
+        dispatchStyleCommand()
+    }
+
     func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRange oldSelectedCharRange: NSRange, toCharacterRange newSelectedCharRange: NSRange) -> NSRange {
 
-        clipboardDelegate?.setCutCopyPaste(
-            cut: isSelectedInCommand(),
-            copy: newSelectedCharRange.length > 0,
-            paste: isPasteAvailable())
-
         let command = cmdRange()
+
+        if newSelectedCharRange.length == 0 {
+            if newSelectedCharRange.location < command.location {
+                return NSMakeRange(command.location, 0)
+            }
+            return newSelectedCharRange
+        }
+
         let intersection = NSIntersectionRange(command, newSelectedCharRange)
         if intersection.length > 0 {
-            moveCursor(to: intersection.location - command.location)
             return intersection
         } else {
             return newSelectedCharRange
