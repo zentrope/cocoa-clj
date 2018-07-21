@@ -120,17 +120,11 @@ class TerminalTextView: NSTextView {
 
     private func prompt() {
         guard let storage = self.textStorage else { return }
-        storage.append(NSAttributedString(string: "\n"))
+        storage.append(newline)
         storage.append(dispatchGetPrompt())
         dispatchStyleCommand()
         setSelectedRange(NSMakeRange(storage.length - 1, 0))
         scrollToEndOfDocument(self)
-    }
-
-    private func newline(count: Int = 1) {
-        guard let storage = self.textStorage else { return }
-        let lineEndings = String(repeating: "\n", count: count)
-        storage.append(NSAttributedString(string: lineEndings))
     }
 
     private func replaceCommand(_ cmd: String) {
@@ -165,12 +159,14 @@ class TerminalTextView: NSTextView {
         return NSMakeRange(location, length)
     }
 
+    private let newline = NSAttributedString(string: "\n")
+
     func display(_ output: NSAttributedString) {
-        newline()
+        textStorage?.append(newline)
         if (output.length > 0) {
-            newline()
+            textStorage?.append(newline)
             textStorage?.append(output)
-            newline()
+            textStorage?.append(newline)
         }
         prompt()
     }

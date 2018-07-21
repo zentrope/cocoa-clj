@@ -27,10 +27,10 @@ struct Style {
     static func apply(result: ReplResponse) -> NSAttributedString {
         let output = NSMutableAttributedString(string: "")
 
-        if let out = result.output {
+        if let out = result.output?.trimmingCharacters(in: .whitespacesAndNewlines) {
             output.append(apply(out, style: .output))
         }
-        if let err = result.err {
+        if let err = result.err?.trimmingCharacters(in: .whitespacesAndNewlines) {
             output.append(apply(err, style: .error))
         } else if let val = result.value {
             let trimmed = val.trimmingCharacters(in: .whitespacesAndNewlines)
