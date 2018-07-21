@@ -26,7 +26,7 @@ a terminal window to run the server side:
 
     clojure -Sdeps '{:deps,{zentrope/cocoa-clj { \
       :git/url "https://github.com/zentrope/cocoa-clj" \
-      :sha "50e53b9bf56a48568a214be7866ec7e7d01455c3" \
+      :sha "affaa848ddb5afb468a75a034e40b381cd0b5af8" \
       :deps/root "server"}}}' \
       -m zentrope.cljapp.main
 
