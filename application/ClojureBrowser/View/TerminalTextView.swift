@@ -85,17 +85,25 @@ class TerminalTextView: NSTextView {
     private func handleKeyDown(with theEvent: NSEvent) -> Bool {
 
         let kcReturnKey  =  36
+        let kcDelete =      51
         let kcDownArrow  = 125
         let kcUpArrow    = 126
 
         let key = Int(theEvent.keyCode)
         let flags = theEvent.modifierFlags.intersection([.function])
 
+        print("key: \(key) \(flags)")
+
         if flags.isEmpty && key == kcReturnKey {
             history.set(getCommandText() ?? "")
             history.new("")
             dispatchInvokeCommand()
             return true
+        }
+
+        if flags.isEmpty && key == kcDelete {
+            // Don't allow the user to backspace over the prompt.
+            return selectedRange().length == 0 && ((selectedRange().location - 1) < cmdRange().location)
         }
 
         if flags == [.function] && key == kcDownArrow {
