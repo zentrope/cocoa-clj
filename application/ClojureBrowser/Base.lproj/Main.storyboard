@@ -614,7 +614,7 @@ Gw
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <subviews>
                                                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6Em-vH-8SR">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="228" height="17"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="235" height="17"/>
                                                                             <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" identifier="TextCell" title="DataCell2" id="MGI-7a-Zlu">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -622,9 +622,9 @@ Gw
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <imageView translatesAutoresizingMaskIntoConstraints="NO" id="52k-Hm-zjP">
-                                                                            <rect key="frame" x="228" y="9" width="17" height="0.0"/>
+                                                                            <rect key="frame" x="235" y="9" width="10" height="0.0"/>
                                                                             <constraints>
-                                                                                <constraint firstAttribute="width" constant="17" id="Opa-JL-GGd"/>
+                                                                                <constraint firstAttribute="width" constant="10" id="Opa-JL-GGd"/>
                                                                             </constraints>
                                                                             <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" id="1jr-zz-wew"/>
                                                                         </imageView>

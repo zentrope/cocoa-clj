@@ -160,8 +160,14 @@ extension SidebarViewController: NSOutlineViewDelegate {
             return makeCell(type: .data, label: namespace.name, image: nil)
 
         case let symbol as CLJSymbol:
-            let icon = symbol.isPrivate ? NSImage(named: NSImage.lockLockedTemplateName) : nil
-            return makeCell(type: .data, label: symbol.name, image: icon)
+            if symbol.isPrivate {
+                return makeCell(type: .data, label: symbol.name, image: NSImage(named: "Private"))
+            }
+            if symbol.isMacro {
+                return makeCell(type: .data, label: symbol.name, image: NSImage(named: "Macro"))
+            }
+
+            return makeCell(type: .data, label: symbol.name, image: nil)
 
         default:
             break
