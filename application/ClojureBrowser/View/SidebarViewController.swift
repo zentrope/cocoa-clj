@@ -278,8 +278,7 @@ extension SidebarViewController: NSMenuDelegate {
 
     @objc private func changeNamespaceAction() {
         if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
-            let cmd = SidebarCommand.changeNamespace(ns)
-            Notify.shared.deliver(.sidebarCommand(cmd))
+            Notify.shared.deliver(.changeNamespaceCommand(ns))
         }
     }
 

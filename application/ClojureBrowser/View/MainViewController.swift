@@ -90,14 +90,11 @@ extension MainViewController: MessageReceiver {
             terminal.display(Style.apply(src.source, style: .clojure))
             focusOnTerminal()
 
-        case .sidebarCommand(let cmd):
-            switch cmd {
-            case .changeNamespace(let ns):
-                let form = "(in-ns '\(ns.name))"
-                terminal.command(Style.apply(form, style: .clojure))
-                invokeCommand(cmd: form, sender: terminal)
-                focusOnTerminal()
-            }
+        case .changeNamespaceCommand(let ns):
+            let form = "(in-ns '\(ns.name))"
+            terminal.command(Style.apply(form, style: .clojure))
+            invokeCommand(cmd: form, sender: terminal)
+            focusOnTerminal()
         default:
             break
         }
