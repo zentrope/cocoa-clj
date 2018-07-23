@@ -157,17 +157,17 @@ extension SidebarViewController: NSOutlineViewDelegate {
             return makeCell(type: .header, label: group.name, image: nil)
 
         case let namespace as CLJNameSpace:
-            return makeCell(type: .data, label: namespace.name, image: nil)
+            return makeCell(type: .namespace, label: namespace.name, image: nil)
 
         case let symbol as CLJSymbol:
+            let symbolView = makeSymbolCell(label: symbol.name)
             if symbol.isPrivate {
-                return makeCell(type: .data, label: symbol.name, image: NSImage(named: "Private"))
+                setImage(inView: symbolView, to: NSImage(named: "Private"))
             }
             if symbol.isMacro {
-                return makeCell(type: .data, label: symbol.name, image: NSImage(named: "Macro"))
+                setIcon(inView: symbolView, to: NSImage(named: "Macro"))
             }
-
-            return makeCell(type: .data, label: symbol.name, image: nil)
+            return symbolView
 
         default:
             break
@@ -189,6 +189,13 @@ extension SidebarViewController: NSOutlineViewDelegate {
         }
     }
 
+    private func setIcon(inView view: SymbolCellView?, to image: NSImage?) {
+        if let imageView = view?.iconView {
+            imageView.image = image
+            imageView.sizeToFit()
+        }
+    }
+
     private func makeCell(type: CellType, label: String, image: NSImage?) -> NSTableCellView? {
         let view = outlineView.makeView(withIdentifier: type.rawValue, owner: self) as? NSTableCellView
         setLabel(inView: view, to: label)
@@ -196,9 +203,17 @@ extension SidebarViewController: NSOutlineViewDelegate {
         return view
     }
 
+    private func makeSymbolCell(label: String) -> SymbolCellView? {
+        let view = outlineView.makeView(withIdentifier: CellType.symbol.rawValue, owner: self) as? SymbolCellView
+        setLabel(inView: view, to: label)
+        setImage(inView: view, to: nil)
+        setIcon(inView: view, to: nil)
+        return view
+    }
+
     private enum CellType: RawRepresentable {
 
-        case header, data
+        case header, namespace, symbol
 
         typealias RawValue = NSUserInterfaceItemIdentifier
 
@@ -206,8 +221,11 @@ extension SidebarViewController: NSOutlineViewDelegate {
             if rawValue.rawValue == "header" {
                 self = .header
             }
-            if rawValue.rawValue == "data" {
-                self = .data
+            if rawValue.rawValue == "namespace" {
+                self = .namespace
+            }
+            if rawValue.rawValue == "symbol" {
+                self = .symbol
             }
             return nil
         }
@@ -216,8 +234,10 @@ extension SidebarViewController: NSOutlineViewDelegate {
             switch self {
             case .header:
                 return NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
-            case .data:
-                return NSUserInterfaceItemIdentifier(rawValue: "DataCell2")
+            case .namespace:
+                return NSUserInterfaceItemIdentifier(rawValue: "NamespaceCell")
+            case .symbol:
+                return NSUserInterfaceItemIdentifier(rawValue: "SymbolCell")
             }
         }
     }

@@ -55,9 +55,10 @@ class CLJNameSpace : Codable {
     private var interns: [CLJSymbol]
 
     lazy var symbols: [CLJSymbol] = {
-        let privs = interns.filter { $0.isPrivate }
-        let pubs  = interns.filter { !$0.isPrivate }
-        return pubs + privs
+        return interns
+//        let privs = interns.filter { $0.isPrivate }
+//        let pubs  = interns.filter { !$0.isPrivate }
+//        return pubs + privs
     }()
 
     lazy var publics: [CLJSymbol] = {
