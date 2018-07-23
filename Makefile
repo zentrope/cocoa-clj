@@ -18,6 +18,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: open server outdated
+.SILENT:
 
 open: ## Open the application in Xcode
 	@open application/ClojureBrowser.xcodeproj
