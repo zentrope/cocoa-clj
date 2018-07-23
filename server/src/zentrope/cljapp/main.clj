@@ -76,15 +76,6 @@
   {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
                (format "Source for '%s' not found." (:symbol cmd)))})
 
-;; (defmethod repl-op "ns" [repl cmd]
-;;   (->> (symbol (:name cmd))
-;;        ns-interns
-;;        vals
-;;        (mapv meta)
-;;        (mapv #(assoc % :ns (.getName (:ns %))))
-;;        (mapv #(select-keys % reasonable))
-;;        (sort-by :name)))
-
 ;;; Web Handlers
 
 (defn- body-of
