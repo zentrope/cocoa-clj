@@ -25,6 +25,7 @@ class SidebarViewController: NSViewController {
     @IBOutlet weak var outlineView: NSOutlineView!
     @IBOutlet weak var searchField: NSSearchField!
     @IBOutlet weak var publicFilterButton: NSButton!
+    @IBOutlet var contextMenu: NSMenu!
 
     var appGroup = SidebarGroup("Application")
     var libGroup = SidebarGroup("Libraries")
@@ -43,11 +44,21 @@ class SidebarViewController: NSViewController {
 
     lazy var groups = { return [appGroup, libGroup, cloGroup] }()
 
+    let changeNsMenuItem = NSMenuItem(title: "",
+        action: #selector(changeNamespaceAction),
+        keyEquivalent: "")
+
+    let sourceMenuItem = NSMenuItem(title: "",
+        action: #selector(displaySourceAction),
+        keyEquivalent: "")
+
     override func viewDidLoad() {
         super.viewDidLoad()
         Notify.shared.register(receiver: self)
         loadNamespaces()
         showOnlyPublic = publicFilterButton.state == .on
+
+        contextMenu.delegate = self
     }
 
     override func viewWillDisappear() {
@@ -74,7 +85,7 @@ class SidebarViewController: NSViewController {
     @IBAction func doubleClicked(_ sender: NSOutlineView) {
         let item = sender.item(atRow: sender.clickedRow)
         if let sym = item as? CLJSymbol {
-            Net.getSource(from: Prefs().replUrl, forSymbol: sym)
+            Net.getSource(from: Prefs.serverUrl, forSymbol: sym)
         }
     }
 }
@@ -249,4 +260,39 @@ extension SidebarViewController: NSOutlineViewDelegate {
     }
 }
 
+// MARK: - NSMenu delegate
 
+extension SidebarViewController: NSMenuDelegate {
+
+    @objc private func displaySourceAction() {
+        if let sym = outlineView.item(atRow: outlineView.clickedRow) as? CLJSymbol {
+            Net.getSource(from: Prefs.serverUrl, forSymbol: sym)
+        }
+    }
+
+    @objc private func changeNamespaceAction() {
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
+            let cmd = SidebarCommand.changeNamespace(ns)
+            Notify.shared.deliverCommand(command: cmd)
+        }
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        menu.removeAllItems()
+
+        let item = outlineView.item(atRow: outlineView.clickedRow)
+        switch item {
+
+        case let ns as CLJNameSpace:
+            changeNsMenuItem.title = "Set namesapce to \(ns.name)"
+            menu.addItem(changeNsMenuItem)
+
+        case let sym as CLJSymbol:
+            sourceMenuItem.title = "Display source for \(sym.name)"
+            menu.addItem(sourceMenuItem)
+
+        default:
+            break
+        }
+    }
+}

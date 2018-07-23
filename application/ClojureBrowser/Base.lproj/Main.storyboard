@@ -683,6 +683,7 @@ Gw
                                                         <action trigger="doubleAction" selector="doubleClicked:" target="Yyz-BI-Uth" id="j56-ed-ybs"/>
                                                         <outlet property="dataSource" destination="Yyz-BI-Uth" id="spB-dS-FQl"/>
                                                         <outlet property="delegate" destination="Yyz-BI-Uth" id="eet-FV-SGp"/>
+                                                        <outlet property="menu" destination="7nS-ns-OoW" id="2jg-s8-Aae"/>
                                                     </connections>
                                                 </outlineView>
                                             </subviews>
@@ -753,12 +754,26 @@ Gw
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="contextMenu" destination="7nS-ns-OoW" id="tta-YF-yWu"/>
                         <outlet property="outlineView" destination="U4H-Fc-fIE" id="xbO-IE-dkr"/>
                         <outlet property="publicFilterButton" destination="eUI-cq-tAm" id="Grr-4G-pqf"/>
                         <outlet property="searchField" destination="yyA-Yz-Sxm" id="qGW-DC-Gav"/>
                     </connections>
                 </viewController>
                 <customObject id="Gs1-Dh-Qao" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+                <menu id="7nS-ns-OoW">
+                    <items>
+                        <menuItem title="Item 1" id="UTM-KJ-vWA">
+                            <modifierMask key="keyEquivalentModifierMask"/>
+                        </menuItem>
+                        <menuItem title="Item 2" id="zUX-of-ENo">
+                            <modifierMask key="keyEquivalentModifierMask"/>
+                        </menuItem>
+                        <menuItem title="Item 3" id="jU4-Us-LRr">
+                            <modifierMask key="keyEquivalentModifierMask"/>
+                        </menuItem>
+                    </items>
+                </menu>
             </objects>
             <point key="canvasLocation" x="-688" y="641"/>
         </scene>

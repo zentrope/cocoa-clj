@@ -24,6 +24,10 @@ protocol ErrorDataReceiver: class {
     func receive(error: Error)
 }
 
+protocol SidebarCommandReceiver: class {
+    func receive(command: SidebarCommand)
+}
+
 class Notify {
 
     static var shared = Notify()
@@ -76,6 +80,13 @@ class Notify {
         withSync { c in
             guard let handler = c as? ErrorDataReceiver else { return }
             DispatchQueue.main.async { handler.receive(error: err)}
+        }
+    }
+
+    func deliverCommand(command: SidebarCommand) {
+        withSync { c in
+            guard let handler = c as? SidebarCommandReceiver else { return }
+            DispatchQueue.main.async { handler.receive(command: command) }
         }
     }
 

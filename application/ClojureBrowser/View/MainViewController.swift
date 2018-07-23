@@ -65,11 +65,18 @@ extension MainViewController: TerminalTextViewDelegate {
 
 // MARK: - Data delegates
 
-extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataReceiver {
+extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataReceiver, SidebarCommandReceiver {
+
+    private func focusOnTerminal() {
+        if let w = self.view.window {
+            w.makeFirstResponder(terminal)
+        }
+    }
 
     func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
         terminal.command(Style.apply("(clojure.repl/source-fn '\(sym.ns)/\(sym.name))", style: .clojure))
         terminal.display(Style.apply(src.source, style: .clojure))
+        focusOnTerminal()
     }
 
     func receive(response: ReplResponse) {
@@ -80,5 +87,15 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataRec
     func receive(error err: Error) {
         let msg = Style.apply(err.localizedDescription, style: .error)
         terminal.display(msg)
+    }
+
+    func receive(command: SidebarCommand) {
+        switch command {
+        case .changeNamespace(let ns):
+            let form = "(in-ns '\(ns.name))"
+            terminal.command(Style.apply(form, style: .clojure))
+            invokeCommand(cmd: form, sender: terminal)
+            focusOnTerminal()
+        }
     }
 }
