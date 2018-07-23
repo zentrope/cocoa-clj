@@ -166,6 +166,12 @@ extension SidebarViewController: NSOutlineViewDelegate {
             }
             if symbol.isMacro {
                 setIcon(inView: symbolView, to: NSImage(named: "Macro"))
+            } else if symbol.isDynamic {
+
+            } else if symbol.isDeprecated {
+
+            } else {
+                setIcon(inView: symbolView, to: NSImage(named: "Function"))
             }
             return symbolView
 
