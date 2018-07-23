@@ -92,14 +92,20 @@ class SidebarViewController: NSViewController {
 
 // MARK: - ServerDataReceiver elegates
 
-extension SidebarViewController: NamespaceDataReceiver {
+extension SidebarViewController: MessageReceiver {
 
-    func receive(namespaces: [CLJNameSpace]) {
-        cloGroup.namespaces = namespaces.filter { $0.name.hasPrefix("clojure.")}
-        appGroup.namespaces = namespaces.filter { $0.name == "user" }
-        libGroup.namespaces = namespaces.filter { $0.name != "user" && !$0.name.hasPrefix("clojure.")}
+    func receive(message: Message) {
+        switch message {
+        case .namespaceData(let namespaces):
+            cloGroup.namespaces = namespaces.filter { $0.name.hasPrefix("clojure.")}
+            appGroup.namespaces = namespaces.filter { $0.name == "user" }
+            libGroup.namespaces = namespaces.filter { $0.name != "user" && !$0.name.hasPrefix("clojure.")}
 
-        outlineView.reloadData()
+            outlineView.reloadData()
+
+        default:
+            break
+        }
     }
 }
 
@@ -273,7 +279,7 @@ extension SidebarViewController: NSMenuDelegate {
     @objc private func changeNamespaceAction() {
         if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
             let cmd = SidebarCommand.changeNamespace(ns)
-            Notify.shared.deliverCommand(command: cmd)
+            Notify.shared.deliver(.sidebarCommand(cmd))
         }
     }
 

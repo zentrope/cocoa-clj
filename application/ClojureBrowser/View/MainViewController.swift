@@ -63,9 +63,9 @@ extension MainViewController: TerminalTextViewDelegate {
 
 }
 
-// MARK: - Data delegates
+// MARK: - MessageReceiver delegate
 
-extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataReceiver, SidebarCommandReceiver {
+extension MainViewController: MessageReceiver {
 
     private func focusOnTerminal() {
         if let w = self.view.window {
@@ -73,29 +73,33 @@ extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataRec
         }
     }
 
-    func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
-        terminal.command(Style.apply("(clojure.repl/source-fn '\(sym.ns)/\(sym.name))", style: .clojure))
-        terminal.display(Style.apply(src.source, style: .clojure))
-        focusOnTerminal()
-    }
+    func receive(message: Message) {
 
-    func receive(response: ReplResponse) {
-        currentNamespace = response.ns ?? currentNamespace
-        terminal.display(Style.apply(result: response))
-    }
+        switch message {
 
-    func receive(error err: Error) {
-        let msg = Style.apply(err.localizedDescription, style: .error)
-        terminal.display(msg)
-    }
+        case .errorData(let err):
+            let msg = Style.apply(err.localizedDescription, style: .error)
+            terminal.display(msg)
 
-    func receive(command: SidebarCommand) {
-        switch command {
-        case .changeNamespace(let ns):
-            let form = "(in-ns '\(ns.name))"
-            terminal.command(Style.apply(form, style: .clojure))
-            invokeCommand(cmd: form, sender: terminal)
+        case .evalData(let response):
+            currentNamespace = response.ns ?? currentNamespace
+            terminal.display(Style.apply(result: response))
+
+        case .sourceData(let src, let sym):
+            terminal.command(Style.apply("(clojure.repl/source-fn '\(sym.ns)/\(sym.name))", style: .clojure))
+            terminal.display(Style.apply(src.source, style: .clojure))
             focusOnTerminal()
+
+        case .sidebarCommand(let cmd):
+            switch cmd {
+            case .changeNamespace(let ns):
+                let form = "(in-ns '\(ns.name))"
+                terminal.command(Style.apply(form, style: .clojure))
+                invokeCommand(cmd: form, sender: terminal)
+                focusOnTerminal()
+            }
+        default:
+            break
         }
     }
 }

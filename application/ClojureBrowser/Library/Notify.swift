@@ -8,94 +8,32 @@
 
 import Cocoa
 
-protocol SourceDataReceiver: class {
-    func receive(symbolSource: CLJSource, forSymbol sym: CLJSymbol)
+
+enum Message {
+    case sourceData(CLJSource, CLJSymbol)
+    case namespaceData([CLJNameSpace])
+    case evalData(ReplResponse)
+    case errorData(Error)
+    case sidebarCommand(SidebarCommand)
 }
 
-protocol NamespaceDataReceiver: class {
-    func receive(namespaces: [CLJNameSpace])
+protocol MessageReceiver: class {
+    func receive(message: Message)
 }
 
-protocol EvalDataReceiver: class {
-    func receive(response: ReplResponse)
-}
-
-protocol ErrorDataReceiver: class {
-    func receive(error: Error)
-}
-
-protocol SidebarCommandReceiver: class {
-    func receive(command: SidebarCommand)
-}
-
-class Notify {
-
+struct Notify {
     static var shared = Notify()
+    var controllers = [MessageReceiver]()
 
-    private let accessQ = DispatchQueue(label: "zentrope.notify.controller")
-    private var controllers = [NSViewController]()
-
-    private init() {
+    mutating func register(receiver handler: MessageReceiver) {
+        controllers.append(handler)
     }
 
-    // MARK: - Registration
-
-    func register(receiver handler: NSViewController) {
-        accessQ.sync {
-            controllers.append(handler)
-        }
+    mutating func unregister(receiver handler: MessageReceiver) {
+        controllers = controllers.filter { $0 !== handler }
     }
 
-    func unregister(receiver handler: NSViewController) {
-        accessQ.sync {
-            controllers = controllers.filter { $0 != handler }
-        }
+    func deliver(_ message: Message) {
+        DispatchQueue.main.async { self.controllers.forEach { $0.receive(message: message)} }
     }
-
-    // MARK: - Delivery
-
-    func deliverSource(source: CLJSource, forSymbol sym: CLJSymbol) {
-        withSync { c in
-            guard let handler = c as? SourceDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(symbolSource: source, forSymbol: sym) }
-        }
-    }
-
-    func deliverNamespaces(namespaces nss: [CLJNameSpace]) {
-        withSync { c in
-            guard let handler = c as? NamespaceDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(namespaces: nss) }
-        }
-    }
-
-    func deliverEval(summary sum: ReplResponse) {
-        withSync { c in
-            guard let handler = c as? EvalDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(response: sum)}
-        }
-    }
-
-    func deliverError(error err: Error) {
-        Log.error(err.localizedDescription)
-        withSync { c in
-            guard let handler = c as? ErrorDataReceiver else { return }
-            DispatchQueue.main.async { handler.receive(error: err)}
-        }
-    }
-
-    func deliverCommand(command: SidebarCommand) {
-        withSync { c in
-            guard let handler = c as? SidebarCommandReceiver else { return }
-            DispatchQueue.main.async { handler.receive(command: command) }
-        }
-    }
-
-    private func withSync(closure: @escaping (_ c: NSViewController) -> ()) {
-        accessQ.sync {
-            controllers.forEach {
-                closure($0)
-            }
-        }
-    }
-
 }

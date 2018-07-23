@@ -21,34 +21,34 @@ struct Net {
 
     static func sendForEval(site: String, form: String) {
         invokeRequest(to: site, withBody: ReplRequest.eval(expr: form)) { error, text in
-            if let e = error { Notify.shared.deliverError(error: e); return }
+            if let e = error { Notify.shared.deliver(.errorData(e)); return }
 
             guard let t = text else { return }
 
             let packets = ReplResponse.decode(t)
             let summary = ReplResponse(packets)
-            Notify.shared.deliverEval(summary: summary)
+            Notify.shared.deliver(.evalData(summary))
         }
     }
 
     static func getNameSpaces(site: String) {
         invokeRequest(to: site, withBody: ReplRequest.getNamespaces()) { error, text in
-            if let e = error { Notify.shared.deliverError(error: e); return }
+            if let e = error { Notify.shared.deliver(.errorData(e)); return }
 
             if let t = text {
                 let nss = ClojureData.decodeNameSpaces(jsonString: t)
-                Notify.shared.deliverNamespaces(namespaces: nss)
+                Notify.shared.deliver(.namespaceData(nss))
             }
         }
     }
 
     static func getSource(from :String, forSymbol sym: CLJSymbol) {
         invokeRequest(to: from, withBody: ReplRequest.getSource(forSymbol: sym)) { error, text in
-            if let e = error { Notify.shared.deliverError(error: e); return }
+            if let e = error { Notify.shared.deliver(.errorData(e)); return }
 
             if let t = text {
                 let source = ClojureData.decodeSource(jsonString: t)
-                Notify.shared.deliverSource(source: source, forSymbol: sym)
+                Notify.shared.deliver(.sourceData(source, sym))
             }
         }
     }
