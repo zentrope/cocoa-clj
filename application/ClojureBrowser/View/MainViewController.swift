@@ -68,6 +68,7 @@ extension MainViewController: TerminalTextViewDelegate {
 extension MainViewController: SourceDataReceiver, EvalDataReceiver, ErrorDataReceiver {
 
     func receive(symbolSource src: CLJSource, forSymbol sym: CLJSymbol) {
+        terminal.command(Style.apply("(clojure.repl/source-fn '\(sym.ns)/\(sym.name))", style: .clojure))
         terminal.display(Style.apply(src.source, style: .clojure))
     }
 

@@ -167,6 +167,13 @@ class TerminalTextView: NSTextView {
         }
         prompt()
     }
+
+    func command(_ command: NSAttributedString) {
+        let r = cmdRange()
+        textStorage?.replaceCharacters(in: r, with: command)
+        history.set(command.string)
+        history.new()
+    }
 }
 
 // MARK: - Delegate dispatch commands
