@@ -615,6 +615,9 @@ Gw
                                                                     <subviews>
                                                                         <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mKn-dX-d9b">
                                                                             <rect key="frame" x="0.0" y="0.0" width="247" height="17"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="height" constant="17" id="cXq-dn-ZTy"/>
+                                                                            </constraints>
                                                                             <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Namespace" id="6uZ-ml-lwg">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -623,8 +626,7 @@ Gw
                                                                         </textField>
                                                                     </subviews>
                                                                     <constraints>
-                                                                        <constraint firstItem="mKn-dX-d9b" firstAttribute="top" secondItem="Izj-3h-Ybu" secondAttribute="top" id="8nj-Xo-NkC"/>
-                                                                        <constraint firstAttribute="bottom" secondItem="mKn-dX-d9b" secondAttribute="bottom" id="B8v-6m-OBN"/>
+                                                                        <constraint firstItem="mKn-dX-d9b" firstAttribute="centerY" secondItem="Izj-3h-Ybu" secondAttribute="centerY" id="FHR-Be-Ish"/>
                                                                         <constraint firstItem="mKn-dX-d9b" firstAttribute="leading" secondItem="Izj-3h-Ybu" secondAttribute="leading" constant="2" id="YRz-zs-CbC"/>
                                                                         <constraint firstAttribute="trailing" secondItem="mKn-dX-d9b" secondAttribute="trailing" constant="2" id="kRx-kJ-3yp"/>
                                                                     </constraints>

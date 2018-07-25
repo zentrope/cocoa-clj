@@ -27,9 +27,9 @@ class SidebarViewController: NSViewController {
     @IBOutlet weak var publicFilterButton: NSButton!
     @IBOutlet var contextMenu: NSMenu!
 
-    var appGroup = SidebarGroup("Application")
-    var libGroup = SidebarGroup("Libraries")
-    var cloGroup = SidebarGroup("Clojure")
+    var appGroup = SidebarGroup("APPLICATION")
+    var libGroup = SidebarGroup("LIBRARIES")
+    var cloGroup = SidebarGroup("CLOJURE")
 
     var symFilter: CLJSymFilter = .publics
     var showOnlyPublic = true {
@@ -84,8 +84,17 @@ class SidebarViewController: NSViewController {
 
     @IBAction func doubleClicked(_ sender: NSOutlineView) {
         let item = sender.item(atRow: sender.clickedRow)
-        if let sym = item as? CLJSymbol {
+
+        switch item {
+        case let sym as CLJSymbol:
             Net.getSource(from: Prefs.serverUrl, forSymbol: sym)
+
+        default:
+            if sender.isItemExpanded(item) {
+                sender.collapseItem(item)
+            } else {
+                sender.expandItem(item)
+            }
         }
     }
 }
@@ -165,6 +174,14 @@ extension SidebarViewController: NSOutlineViewDataSource {
 // MARK: - NSOutlineView delegate
 
 extension SidebarViewController: NSOutlineViewDelegate {
+
+    func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
+        return item is SidebarGroup
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
+        return 20.0
+    }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
 
@@ -289,11 +306,11 @@ extension SidebarViewController: NSMenuDelegate {
         switch item {
 
         case let ns as CLJNameSpace:
-            changeNsMenuItem.title = "Set namesapce to \(ns.name)"
+            changeNsMenuItem.title = "Go to `\(ns.name)`"
             menu.addItem(changeNsMenuItem)
 
         case let sym as CLJSymbol:
-            sourceMenuItem.title = "Display source for \(sym.name)"
+            sourceMenuItem.title = "Show source for `\(sym.name)`"
             menu.addItem(sourceMenuItem)
 
         default:
