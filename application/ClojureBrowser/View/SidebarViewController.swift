@@ -9,12 +9,26 @@
 import Cocoa
 
 class SidebarGroup {
+
     var name: String
     var namespaces: [CLJNameSpace]
 
     init(_ aName: String) {
         name = aName
         namespaces = [CLJNameSpace]()
+    }
+
+    func append(ns: CLJNameSpace) {
+        namespaces.append(ns)
+        namespaces = namespaces.sorted(by: {$0.name < $1.name} )
+    }
+
+    func extract(name: String) -> CLJNameSpace? {
+        if let found = namespaces.first(where: { $0.name == name}) {
+            namespaces = namespaces.filter { $0 !== found }
+            return found
+        }
+        return nil
     }
 }
 
@@ -27,9 +41,10 @@ class SidebarViewController: NSViewController {
     @IBOutlet weak var publicFilterButton: NSButton!
     @IBOutlet var contextMenu: NSMenu!
 
-    var appGroup = SidebarGroup("APPLICATION")
-    var libGroup = SidebarGroup("LIBRARIES")
-    var cloGroup = SidebarGroup("CLOJURE")
+    var favorites = Set<String>()
+    var appGroup = SidebarGroup("Favorites")
+    var libGroup = SidebarGroup("Libraries")
+    var cloGroup = SidebarGroup("Clojure")
 
     var symFilter: CLJSymFilter = .publics
     var showOnlyPublic = true {
@@ -44,12 +59,24 @@ class SidebarViewController: NSViewController {
 
     lazy var groups = { return [appGroup, libGroup, cloGroup] }()
 
-    let changeNsMenuItem = NSMenuItem(title: "",
+    let changeNsMenuItem = NSMenuItem(
+        title: "Set namespace",
         action: #selector(changeNamespaceAction),
         keyEquivalent: "")
 
-    let sourceMenuItem = NSMenuItem(title: "",
+    let sourceMenuItem = NSMenuItem(
+        title: "View source",
         action: #selector(displaySourceAction),
+        keyEquivalent: "")
+
+    let favMenuItem = NSMenuItem(
+        title: "Favorite",
+        action: #selector(favNamespaceAction),
+        keyEquivalent: "")
+
+    let unfavMenuItem = NSMenuItem(
+        title: "Unfavorite",
+        action: #selector(unfavNamespaceAction),
         keyEquivalent: "")
 
     override func viewDidLoad() {
@@ -59,6 +86,8 @@ class SidebarViewController: NSViewController {
         showOnlyPublic = publicFilterButton.state == .on
 
         contextMenu.delegate = self
+
+        outlineView.registerForDraggedTypes([NSPasteboard.PasteboardType.string])
     }
 
     override func viewWillDisappear() {
@@ -67,6 +96,34 @@ class SidebarViewController: NSViewController {
 
     private func loadNamespaces() {
         Net.getNameSpaces(site: Prefs.serverUrl)
+    }
+
+    private func syncFavorites() {
+        favorites.forEach {
+            if let mover = libGroup.extract(name: $0) {
+                appGroup.append(ns: mover)
+            } else if let mover = cloGroup.extract(name: $0) {
+                appGroup.append(ns: mover)
+            }
+        }
+        outlineView.reloadData()
+    }
+
+    private func removeFromFaves(_ namespace: CLJNameSpace) {
+        if namespace.name.hasPrefix("clojure.") {
+            cloGroup.append(ns: namespace)
+        } else {
+            libGroup.append(ns: namespace)
+        }
+
+        let _ = favorites.remove(namespace.name)
+        let _ = appGroup.extract(name: namespace.name)
+        syncFavorites()
+    }
+
+    private func moveToFavorites(_ namespace: String) {
+        favorites.insert(namespace)
+        syncFavorites()
     }
 
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
@@ -109,8 +166,10 @@ extension SidebarViewController: MessageReceiver {
             cloGroup.namespaces = namespaces.filter { $0.name.hasPrefix("clojure.")}
             appGroup.namespaces = namespaces.filter { $0.name == "user" }
             libGroup.namespaces = namespaces.filter { $0.name != "user" && !$0.name.hasPrefix("clojure.")}
-
             outlineView.reloadData()
+            outlineView.expandItem(appGroup)
+            outlineView.expandItem(libGroup)
+            syncFavorites()
 
         default:
             break
@@ -168,6 +227,35 @@ extension SidebarViewController: NSOutlineViewDataSource {
         default:
             return false
         }
+    }
+
+    /// Dropped
+    func outlineView(_ outlineView: NSOutlineView, acceptDrop info: NSDraggingInfo, item: Any?, childIndex index: Int) -> Bool {
+        let pb = info.draggingPasteboard
+        if let ns = pb.string(forType: .string) {
+            moveToFavorites(ns)
+            return true
+        }
+        return false
+    }
+
+    /// Move dragged thing to pasteboard
+    func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> NSPasteboardWriting? {
+        guard let namespace = item as? CLJNameSpace else {
+            return nil
+        }
+        let pbItem = NSPasteboardItem()
+        pbItem.setString(namespace.name, forType: .string)
+        return pbItem
+    }
+
+    /// Can be dropped on?
+    func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
+        if let group = item as? SidebarGroup,
+            group === appGroup {
+            return NSDragOperation.move
+        }
+        return []
     }
 }
 
@@ -299,6 +387,18 @@ extension SidebarViewController: NSMenuDelegate {
         }
     }
 
+    @objc private func favNamespaceAction() {
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
+            moveToFavorites(ns.name)
+        }
+    }
+
+    @objc private func unfavNamespaceAction() {
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
+            removeFromFaves(ns)
+        }
+    }
+
     func menuWillOpen(_ menu: NSMenu) {
         menu.removeAllItems()
 
@@ -306,11 +406,16 @@ extension SidebarViewController: NSMenuDelegate {
         switch item {
 
         case let ns as CLJNameSpace:
-            changeNsMenuItem.title = "Go to `\(ns.name)`"
+            if ns.name != "user" {
+                if favorites.contains(ns.name) {
+                    menu.addItem(unfavMenuItem)
+                } else {
+                    menu.addItem(favMenuItem)
+                }
+            }
             menu.addItem(changeNsMenuItem)
 
-        case let sym as CLJSymbol:
-            sourceMenuItem.title = "Show source for `\(sym.name)`"
+        case _ as CLJSymbol:
             menu.addItem(sourceMenuItem)
 
         default:
