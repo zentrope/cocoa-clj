@@ -104,8 +104,10 @@ class SidebarViewController: NSViewController {
         favorites.forEach {
             if let mover = libGroup.extract(name: $0) {
                 appGroup.append(ns: mover)
+                outlineView.collapseItem(mover)
             } else if let mover = cloGroup.extract(name: $0) {
                 appGroup.append(ns: mover)
+                outlineView.collapseItem(mover)
             }
         }
         outlineView.reloadData()
@@ -126,6 +128,7 @@ class SidebarViewController: NSViewController {
     private func moveToFavorites(_ namespace: String) {
         favorites.insert(namespace)
         syncFavorites()
+        outlineView.expandItem(appGroup)
     }
 
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
