@@ -8,6 +8,8 @@
 
 import Cocoa
 
+// MARK: Sidebar Group
+
 class SidebarGroup {
 
     var name: String
@@ -279,7 +281,9 @@ extension SidebarViewController: NSOutlineViewDelegate {
             return makeCell(type: .header, label: group.name, image: nil)
 
         case let namespace as CLJNameSpace:
-            return makeCell(type: .namespace, label: namespace.name, image: nil)
+            let nview = makeSymbolCell(label: namespace.name)
+            setIcon(inView: nview, to: NSImage(named: "Namespace"))
+            return nview
 
         case let symbol as CLJSymbol:
             let symbolView = makeSymbolCell(label: symbol.name)
@@ -341,16 +345,13 @@ extension SidebarViewController: NSOutlineViewDelegate {
 
     private enum CellType: RawRepresentable {
 
-        case header, namespace, symbol
+        case header, symbol
 
         typealias RawValue = NSUserInterfaceItemIdentifier
 
         init?(rawValue: NSUserInterfaceItemIdentifier) {
             if rawValue.rawValue == "header" {
                 self = .header
-            }
-            if rawValue.rawValue == "namespace" {
-                self = .namespace
             }
             if rawValue.rawValue == "symbol" {
                 self = .symbol
@@ -362,8 +363,6 @@ extension SidebarViewController: NSOutlineViewDelegate {
             switch self {
             case .header:
                 return NSUserInterfaceItemIdentifier(rawValue: "HeaderCell")
-            case .namespace:
-                return NSUserInterfaceItemIdentifier(rawValue: "NamespaceCell")
             case .symbol:
                 return NSUserInterfaceItemIdentifier(rawValue: "SymbolCell")
             }
