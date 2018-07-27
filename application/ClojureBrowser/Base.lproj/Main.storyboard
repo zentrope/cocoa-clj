@@ -576,66 +576,8 @@ Gw
                                                                         <outlet property="textField" destination="lwr-Zc-YLi" id="tO4-93-Ai0"/>
                                                                     </connections>
                                                                 </tableCellView>
-                                                                <tableCellView identifier="DataCell" id="SVe-sx-hI2">
-                                                                    <rect key="frame" x="1" y="17" width="247" height="17"/>
-                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                    <subviews>
-                                                                        <imageView translatesAutoresizingMaskIntoConstraints="NO" id="OSS-5y-q4K">
-                                                                            <rect key="frame" x="3" y="0.0" width="17" height="17"/>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="width" constant="17" id="W4Q-Vx-euz"/>
-                                                                            </constraints>
-                                                                            <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" id="8jp-JP-5Lm"/>
-                                                                        </imageView>
-                                                                        <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dzi-Bu-R8o">
-                                                                            <rect key="frame" x="25" y="0.0" width="222" height="17"/>
-                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" identifier="TextCell" title="Table View Cell" usesSingleLineMode="YES" id="LTc-ar-5MI">
-                                                                                <font key="font" metaFont="system"/>
-                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                                            </textFieldCell>
-                                                                        </textField>
-                                                                    </subviews>
-                                                                    <constraints>
-                                                                        <constraint firstItem="OSS-5y-q4K" firstAttribute="bottom" secondItem="dzi-Bu-R8o" secondAttribute="bottom" id="2I4-M1-A1X"/>
-                                                                        <constraint firstItem="OSS-5y-q4K" firstAttribute="centerY" secondItem="SVe-sx-hI2" secondAttribute="centerY" id="Swz-7x-9wq"/>
-                                                                        <constraint firstItem="OSS-5y-q4K" firstAttribute="top" secondItem="dzi-Bu-R8o" secondAttribute="top" id="X9O-Po-skq"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="dzi-Bu-R8o" secondAttribute="trailing" constant="2" id="bgI-ig-7we"/>
-                                                                        <constraint firstItem="dzi-Bu-R8o" firstAttribute="leading" secondItem="OSS-5y-q4K" secondAttribute="trailing" constant="7" id="pgv-Mz-XcD"/>
-                                                                        <constraint firstItem="OSS-5y-q4K" firstAttribute="leading" secondItem="SVe-sx-hI2" secondAttribute="leading" constant="3" id="pyI-nb-RsJ"/>
-                                                                    </constraints>
-                                                                    <connections>
-                                                                        <outlet property="imageView" destination="OSS-5y-q4K" id="pxc-rM-0FM"/>
-                                                                        <outlet property="textField" destination="dzi-Bu-R8o" id="llR-SH-ffn"/>
-                                                                    </connections>
-                                                                </tableCellView>
-                                                                <tableCellView identifier="NamespaceCell" id="Izj-3h-Ybu">
-                                                                    <rect key="frame" x="1" y="34" width="247" height="17"/>
-                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                    <subviews>
-                                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mKn-dX-d9b">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="247" height="17"/>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="height" constant="17" id="cXq-dn-ZTy"/>
-                                                                            </constraints>
-                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Namespace" usesSingleLineMode="YES" id="6uZ-ml-lwg">
-                                                                                <font key="font" metaFont="system"/>
-                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                                            </textFieldCell>
-                                                                        </textField>
-                                                                    </subviews>
-                                                                    <constraints>
-                                                                        <constraint firstItem="mKn-dX-d9b" firstAttribute="centerY" secondItem="Izj-3h-Ybu" secondAttribute="centerY" id="FHR-Be-Ish"/>
-                                                                        <constraint firstItem="mKn-dX-d9b" firstAttribute="leading" secondItem="Izj-3h-Ybu" secondAttribute="leading" constant="2" id="YRz-zs-CbC"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="mKn-dX-d9b" secondAttribute="trailing" constant="2" id="kRx-kJ-3yp"/>
-                                                                    </constraints>
-                                                                    <connections>
-                                                                        <outlet property="textField" destination="mKn-dX-d9b" id="eH0-he-Zjs"/>
-                                                                    </connections>
-                                                                </tableCellView>
                                                                 <tableCellView identifier="SymbolCell" id="BYc-1B-5FB" customClass="SymbolCellView" customModule="ClojureBrowser" customModuleProvider="target">
-                                                                    <rect key="frame" x="1" y="51" width="247" height="17"/>
+                                                                    <rect key="frame" x="1" y="17" width="247" height="17"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <subviews>
                                                                         <imageView identifier="Icon" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="vwb-QR-P5I">
@@ -676,6 +618,39 @@ Gw
                                                                         <outlet property="iconView" destination="vwb-QR-P5I" id="ELK-6c-htc"/>
                                                                         <outlet property="imageView" destination="52k-Hm-zjP" id="vmf-cy-Psn"/>
                                                                         <outlet property="textField" destination="6Em-vH-8SR" id="cby-QL-Nxh"/>
+                                                                    </connections>
+                                                                </tableCellView>
+                                                                <tableCellView identifier="NamespaceCell" id="3Zl-2F-DVS">
+                                                                    <rect key="frame" x="1" y="34" width="247" height="17"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5ao-26-Rlr">
+                                                                            <rect key="frame" x="20" y="0.0" width="227" height="17"/>
+                                                                            <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" identifier="TextCell" placeholderString="Namespace" usesSingleLineMode="YES" id="SXA-gp-3f8">
+                                                                                <font key="font" metaFont="system"/>
+                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                            </textFieldCell>
+                                                                        </textField>
+                                                                        <imageView translatesAutoresizingMaskIntoConstraints="NO" id="gVU-h9-mUC">
+                                                                            <rect key="frame" x="2" y="1" width="16" height="16"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="height" constant="16" id="Hrb-OL-fqg"/>
+                                                                                <constraint firstAttribute="width" constant="16" id="arb-2g-usQ"/>
+                                                                            </constraints>
+                                                                            <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" id="5eb-9v-IFg"/>
+                                                                        </imageView>
+                                                                    </subviews>
+                                                                    <constraints>
+                                                                        <constraint firstItem="5ao-26-Rlr" firstAttribute="leading" secondItem="gVU-h9-mUC" secondAttribute="trailing" constant="4" id="9k9-Jj-b06"/>
+                                                                        <constraint firstItem="gVU-h9-mUC" firstAttribute="leading" secondItem="3Zl-2F-DVS" secondAttribute="leading" constant="2" id="OQU-pY-jjn"/>
+                                                                        <constraint firstItem="5ao-26-Rlr" firstAttribute="centerY" secondItem="3Zl-2F-DVS" secondAttribute="centerY" id="P6h-Co-Z0z"/>
+                                                                        <constraint firstAttribute="trailing" secondItem="5ao-26-Rlr" secondAttribute="trailing" constant="2" id="cJq-mH-3LF"/>
+                                                                        <constraint firstItem="gVU-h9-mUC" firstAttribute="centerY" secondItem="3Zl-2F-DVS" secondAttribute="centerY" id="una-on-nFd"/>
+                                                                    </constraints>
+                                                                    <connections>
+                                                                        <outlet property="imageView" destination="gVU-h9-mUC" id="chG-eD-gUl"/>
+                                                                        <outlet property="textField" destination="5ao-26-Rlr" id="os2-If-El3"/>
                                                                     </connections>
                                                                 </tableCellView>
                                                             </prototypeCellViews>
