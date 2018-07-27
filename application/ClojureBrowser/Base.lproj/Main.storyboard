@@ -711,6 +711,10 @@ Gw
                                         </constraints>
                                     </visualEffectView>
                                 </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="600" id="8r4-cP-411"/>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="PoW-K1-9WJ"/>
+                                </constraints>
                                 <visibilityPriorities>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
