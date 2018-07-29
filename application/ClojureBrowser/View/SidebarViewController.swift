@@ -8,31 +8,6 @@
 
 import Cocoa
 
-// MARK: Sidebar Group
-
-class SidebarGroup {
-
-    var name: String
-    var namespaces: [CLJNameSpace]
-
-    init(_ aName: String) {
-        name = aName
-        namespaces = [CLJNameSpace]()
-    }
-
-    func append(ns: CLJNameSpace) {
-        namespaces.append(ns)
-        namespaces = namespaces.sorted(by: {$0.name < $1.name} )
-    }
-
-    func extract(name: String) -> CLJNameSpace? {
-        if let found = namespaces.first(where: { $0.name == name}) {
-            namespaces = namespaces.filter { $0 !== found }
-            return found
-        }
-        return nil
-    }
-}
 
 // MARK: - Main
 
@@ -42,11 +17,6 @@ class SidebarViewController: NSViewController {
     @IBOutlet weak var searchField: NSSearchField!
     @IBOutlet weak var publicFilterButton: NSButton!
     @IBOutlet var contextMenu: NSMenu!
-
-    var favorites = Set<String>()
-    var appGroup = SidebarGroup("Favorites")
-    var libGroup = SidebarGroup("Libraries")
-    var cloGroup = SidebarGroup("Clojure")
 
     var symFilter: CLJSymFilter = .publics
     var showOnlyPublic = true {
@@ -59,7 +29,7 @@ class SidebarViewController: NSViewController {
         }
     }
 
-    lazy var groups = { return [appGroup, libGroup, cloGroup] }()
+    var outlineState: OutlineState = OutlineState.shared
 
     let changeNsMenuItem = NSMenuItem(
         title: "Set namespace",
@@ -100,35 +70,15 @@ class SidebarViewController: NSViewController {
         Net.getNameSpaces(site: Prefs.serverUrl)
     }
 
-    private func syncFavorites() {
-        favorites.forEach {
-            if let mover = libGroup.extract(name: $0) {
-                appGroup.append(ns: mover)
-                outlineView.collapseItem(mover)
-            } else if let mover = cloGroup.extract(name: $0) {
-                appGroup.append(ns: mover)
-                outlineView.collapseItem(mover)
-            }
-        }
+    private func removeFromFaves(_ namespace: CLJNameSpace) {
+        outlineState.removeFromFaves(namespace)
         outlineView.reloadData()
     }
 
-    private func removeFromFaves(_ namespace: CLJNameSpace) {
-        if namespace.name.hasPrefix("clojure.") {
-            cloGroup.append(ns: namespace)
-        } else {
-            libGroup.append(ns: namespace)
-        }
-
-        let _ = favorites.remove(namespace.name)
-        let _ = appGroup.extract(name: namespace.name)
-        syncFavorites()
-    }
-
     private func moveToFavorites(_ namespace: String) {
-        favorites.insert(namespace)
-        syncFavorites()
-        outlineView.expandItem(appGroup)
+        outlineState.moveToFavorites(namespace)
+        outlineView.reloadData()
+        outlineView.expandItem(outlineState.favGroup)
     }
 
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
@@ -168,13 +118,10 @@ extension SidebarViewController: MessageReceiver {
     func receive(message: Message) {
         switch message {
         case .namespaceData(let namespaces):
-            cloGroup.namespaces = namespaces.filter { $0.name.hasPrefix("clojure.")}
-            appGroup.namespaces = namespaces.filter { $0.name == "user" }
-            libGroup.namespaces = namespaces.filter { $0.name != "user" && !$0.name.hasPrefix("clojure.")}
+            outlineState.reloadNamespaces(namespaces)
             outlineView.reloadData()
-            outlineView.expandItem(appGroup)
-            outlineView.expandItem(libGroup)
-            syncFavorites()
+            outlineView.expandItem(outlineState.favGroup)
+            outlineView.expandItem(outlineState.libGroup)
 
         default:
             break
@@ -190,14 +137,14 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
         switch item {
 
-        case let group as SidebarGroup:
+        case let group as NamespaceGroup:
             return group.namespaces.count
 
         case let namespace as CLJNameSpace:
             return namespace.symbols(filter: symFilter).count
 
         default:
-            return item == nil ? groups.count : 0
+            return item == nil ? outlineState.groups.count : 0
         }
     }
 
@@ -205,14 +152,14 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
         switch item {
 
-        case let group as SidebarGroup:
+        case let group as NamespaceGroup:
             return group.namespaces[index]
 
         case let namespace as CLJNameSpace:
             return namespace.symbols(filter: symFilter)[index]
 
         default:
-            return groups[index]
+            return outlineState.groups[index]
         }
     }
 
@@ -220,7 +167,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
         switch item {
 
-        case _ as SidebarGroup:
+        case _ as NamespaceGroup:
             return true
 
         case let namespace as CLJNameSpace:
@@ -256,8 +203,8 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
     /// Can be dropped on?
     func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
-        if let group = item as? SidebarGroup,
-            group === appGroup {
+        if let group = item as? NamespaceGroup,
+            group === outlineState.favGroup {
             return NSDragOperation.move
         }
         return []
@@ -269,7 +216,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
 extension SidebarViewController: NSOutlineViewDelegate {
 
     func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
-        return item is SidebarGroup
+        return item is NamespaceGroup
     }
 
     func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
@@ -280,7 +227,7 @@ extension SidebarViewController: NSOutlineViewDelegate {
 
         switch item {
 
-        case let group as SidebarGroup:
+        case let group as NamespaceGroup:
             return makeCell(type: .header, label: group.name, image: nil)
 
         case let namespace as CLJNameSpace:
@@ -412,7 +359,7 @@ extension SidebarViewController: NSMenuDelegate {
 
         case let ns as CLJNameSpace:
             if ns.name != "user" {
-                if favorites.contains(ns.name) {
+                if outlineState.isFavorited(ns.name) {
                     menu.addItem(unfavMenuItem)
                 } else {
                     menu.addItem(favMenuItem)
