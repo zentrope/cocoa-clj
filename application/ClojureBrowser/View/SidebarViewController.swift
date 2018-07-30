@@ -71,8 +71,23 @@ class SidebarViewController: NSViewController {
         outlineView.expandItem(outlineState.favoritesGroup())
     }
 
+    var oldTerms = ""
+
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
-        outlineState.textFilter = sender.stringValue
+        let terms = sender.stringValue
+        outlineState.textFilter = terms
+        outlineView.reloadData()
+        if terms.isEmpty && !oldTerms.isEmpty {
+            outlineView.expandItem(outlineState.group(.favorites))
+            outlineView.expandItem(outlineState.group(.libraries))
+            outlineView.collapseItem(outlineState.group(.clojure), collapseChildren: true)
+        }
+        if !terms.isEmpty {
+            outlineState.groups().forEach {
+                outlineView.expandItem($0, expandChildren: true)
+            }
+        }
+        oldTerms = terms
     }
 
     @IBAction func refreshButtonClicked(_ sender: NSButton) {

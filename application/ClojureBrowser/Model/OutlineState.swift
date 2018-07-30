@@ -58,42 +58,77 @@ class OutlineState {
 
     let numGroups = GroupType.count
 
-    var textFilter: String = "" {
-        didSet { Log.info("search is `\(textFilter)`") }
-    }
-
-    private var symbols = [OutlineSymbol]()
+    private var symCache = Cache()
     private var cache = Cache()
     private var symbolFilter: SymbolFilter = .publicSymbols
     private var faves = Set<String>()
 
-    init() {
+    var textFilter: String = "" {
+        didSet { Log.info("search is `\(textFilter)`") }
+    }
+
+    private var _symbols = [OutlineSymbol]()
+
+    private var symbols: [OutlineSymbol] {
+        get {
+            if let syms = symCache.lookup(data: symbolFilter, textFilter) as? [OutlineSymbol] {
+                return syms
+            }
+
+            var syms = _symbols
+            if symbolFilter == .publicSymbols {
+                syms = syms.filter { !$0.symbol.isPrivate }
+            }
+
+            if !textFilter.isEmpty {
+                syms = syms.filter { $0.symbol.name.contains(textFilter) }
+            }
+
+            symCache.save(value: syms, data: symbolFilter, textFilter)
+            return syms
+        }
+        set {
+            _symbols = newValue;
+            symCache.reset()
+        }
     }
 
     // MARK:- Mutating
 
     func reloadNamespaces(_ namespaces: [CLJNameSpace]) {
         cache.reset()
-        symbols.removeAll()
+        var syms = [OutlineSymbol]()
+        //symbols.removeAll()
         namespaces.forEach { ns in
             let group: GroupType = isFavorited(ns.name) ? .favorites :
                 ns.name == "user" ? .favorites :
                 ns.name.hasPrefix("clojure.") ? .clojure :
                 .libraries
             ns.symbols.forEach { sym in
-                symbols.append(OutlineSymbol(aSymbol: sym, inGroup: group))
+                syms.append(OutlineSymbol(aSymbol: sym, inGroup: group))
             }
         }
+
+        syms.sort(by: { $0.symbol.name < $1.symbol.name })
+        symbols = syms
     }
 
     func setFilter(filter: SymbolFilter) {
         symbolFilter = filter
     }
 
+    func isTextFiltered() -> Bool {
+        return !textFilter.isEmpty
+    }
+
     // MARK:- Subscripting
 
     func favoritesGroup() -> OutlineGroup {
         return group(.favorites)
+    }
+
+    func groups() -> [OutlineGroup] {
+        return [group(.favorites), group(.libraries), group(.clojure)]
     }
 
     func group(_ type: GroupType) -> OutlineGroup {
@@ -152,13 +187,7 @@ class OutlineState {
     }
 
     private func symbols(inNamespace ns: String) -> [OutlineSymbol] {
-        let syms = symbols.filter { $0.namespace == ns }.sorted(by: { $0.symbol.name < $1.symbol.name})
-        switch symbolFilter {
-        case .publicSymbols:
-            return syms.filter { !$0.symbol.isPrivate }
-        default:
-            return syms
-        }
+        return symbols.filter { $0.namespace == ns }
     }
 
     // MARK:- Favorites
