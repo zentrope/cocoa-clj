@@ -46,12 +46,12 @@ struct CLJSource : Codable {
     var source: String
 }
 
-class CLJNameSpace : Codable {
+struct CLJNameSpace : Codable {
     var name: String
     var symbols: [CLJSymbol]
 }
 
-class CLJSymbol : Codable {
+struct CLJSymbol : Codable {
     var ns: String
     var name: String
     var isPrivate: Bool
