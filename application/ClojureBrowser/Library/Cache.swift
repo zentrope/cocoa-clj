@@ -8,33 +8,28 @@
 
 import Foundation
 
-/// Stores data based on provided arguments kinda like
-/// memoize functions.
 class Cache {
 
     var cache = [Int:Any]()
 
     func save(value: Any, data: AnyHashable...) {
-        var h = Hasher()
-        for d in data {
-            h.combine(d)
-        }
-        let key = h.finalize()
+        let key = makeKey(data: data)
         cache[key] = value
     }
 
     func lookup(data: AnyHashable...) -> Any? {
-        var h = Hasher()
-        for d in data {
-            h.combine(d)
-        }
-        let key = h.finalize()
-
+        let key = makeKey(data: data)
         return cache[key]
     }
 
     func reset() {
         cache = [Int:Any]()
+    }
+
+    private func makeKey(data: AnyHashable...) -> Int {
+        var h = Hasher()
+        data.forEach { h.combine($0) }
+        return h.finalize()
     }
 }
 
