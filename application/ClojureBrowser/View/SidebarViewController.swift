@@ -89,8 +89,8 @@ class SidebarViewController: NSViewController {
         let item = sender.item(atRow: sender.clickedRow)
 
         switch item {
-        case let sym as CLJSymbol:
-            Net.getSource(from: Prefs.serverUrl, forSymbol: sym)
+        case let sym as OutlineSymbol:
+            Net.getSource(from: Prefs.serverUrl, forSymbol: sym.symbol)
 
         default:
             if sender.isItemExpanded(item) {
