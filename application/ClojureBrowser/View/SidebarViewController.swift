@@ -65,10 +65,10 @@ class SidebarViewController: NSViewController {
         outlineView.reloadData()
     }
 
-    private func moveToFavorites(_ namespace: String) {
+    private func moveToFavorites(_ namespace: OutlineNS) {
         outlineState.moveToFaves(namespace)
         outlineView.reloadData()
-        outlineView.expandItem(outlineState.group(.favorites))
+        outlineView.expandItem(outlineState.favoritesGroup())
     }
 
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {

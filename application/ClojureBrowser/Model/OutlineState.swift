@@ -56,17 +56,16 @@ class OutlineState {
 
     static var shared = OutlineState()
 
+    let numGroups = GroupType.count
+
     var textFilter: String = "" {
         didSet { Log.info("search is `\(textFilter)`") }
-    }
-
-    var numGroups: Int {
-        get { return GroupType.count }
     }
 
     private var symbols = [OutlineSymbol]()
     private var cache = Cache()
     private var symbolFilter: SymbolFilter = .publicSymbols
+    private var faves = Set<String>()
 
     init() {
     }
@@ -77,8 +76,10 @@ class OutlineState {
         cache.reset()
         symbols.removeAll()
         namespaces.forEach { ns in
-            let group: GroupType = ns.name.hasPrefix("clojure.") ? .clojure :
-                ns.name == "user" ? .favorites : .libraries;
+            let group: GroupType = isFavorited(ns.name) ? .favorites :
+                ns.name == "user" ? .favorites :
+                ns.name.hasPrefix("clojure.") ? .clojure :
+                .libraries
             ns.symbols.forEach { sym in
                 symbols.append(OutlineSymbol(aSymbol: sym, inGroup: group))
             }
@@ -91,6 +92,10 @@ class OutlineState {
 
     // MARK:- Subscripting
 
+    func favoritesGroup() -> OutlineGroup {
+        return group(.favorites)
+    }
+
     func group(_ type: GroupType) -> OutlineGroup {
         if let saved = cache.lookup(data: type.rawValue, type) as? OutlineGroup {
             return saved
@@ -101,12 +106,13 @@ class OutlineState {
     }
 
     func namespace(inGroup group: OutlineGroup, atIndex index: Int) -> OutlineNS {
-        if let saved = cache.lookup(data: group.type, index) as? OutlineNS {
+        let ns = namespaces(group.type)[index]
+
+        if let saved = cache.lookup(data: ns, group.type, index) as? OutlineNS {
             return saved
         }
 
-        let ns = namespaces(group.type)[index]
-        cache.save(value: ns, data: group.type, index)
+        cache.save(value: ns, data: ns, group.type, index)
         return ns
     }
 
@@ -146,7 +152,7 @@ class OutlineState {
     }
 
     private func symbols(inNamespace ns: String) -> [OutlineSymbol] {
-        let syms = symbols.filter { $0.namespace == ns }
+        let syms = symbols.filter { $0.namespace == ns }.sorted(by: { $0.symbol.name < $1.symbol.name})
         switch symbolFilter {
         case .publicSymbols:
             return syms.filter { !$0.symbol.isPrivate }
@@ -155,19 +161,21 @@ class OutlineState {
         }
     }
 
-    // MARK:- Favorites handling
+    // MARK:- Favorites
 
     func isFavorited(_ name: String) -> Bool {
-        return symbols.first(where: { $0.namespace == name && $0.group == .favorites}) != nil
+        return faves.contains(name)
     }
 
-    func removeFromFaves(_ ns: OutlineNS) {
-        symbols.filter({ $0.namespace == ns}).forEach { s in
+    func removeFromFaves(_ name: OutlineNS) {
+        faves.remove(name)
+        symbols.filter({ $0.namespace == name}).forEach { s in
             s.group = s.namespace.hasPrefix("clojure.") ? .clojure : .libraries
         }
     }
 
     func moveToFaves(_ name: String) {
+        faves.insert(name)
         symbols.filter({ $0.namespace == name}).forEach { s in
             s.group = .favorites
         }
