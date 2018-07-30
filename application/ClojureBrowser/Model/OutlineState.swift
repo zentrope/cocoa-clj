@@ -98,7 +98,6 @@ class OutlineState {
     func reloadNamespaces(_ namespaces: [CLJNameSpace]) {
         cache.reset()
         var syms = [OutlineSymbol]()
-        //symbols.removeAll()
         namespaces.forEach { ns in
             let group: GroupType = isFavorited(ns.name) ? .favorites :
                 ns.name == "user" ? .favorites :
