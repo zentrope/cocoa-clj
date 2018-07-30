@@ -91,7 +91,7 @@ extension MainViewController: MessageReceiver {
             focusOnTerminal()
 
         case .changeNamespaceCommand(let ns):
-            let form = "(in-ns '\(ns.name))"
+            let form = "(in-ns '\(ns))"
             terminal.command(Style.apply(form, style: .clojure))
             invokeCommand(cmd: form, sender: terminal)
             focusOnTerminal()

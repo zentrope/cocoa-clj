@@ -18,17 +18,6 @@ class SidebarViewController: NSViewController {
     @IBOutlet weak var publicFilterButton: NSButton!
     @IBOutlet var contextMenu: NSMenu!
 
-    var symFilter: CLJSymFilter = .publics
-    var showOnlyPublic = true {
-        didSet {
-            if showOnlyPublic {
-                symFilter = .publics
-            } else {
-                symFilter = .all
-            }
-        }
-    }
-
     var outlineState: OutlineState = OutlineState.shared
 
     let changeNsMenuItem = NSMenuItem(
@@ -55,11 +44,12 @@ class SidebarViewController: NSViewController {
         super.viewDidLoad()
         Notify.shared.register(receiver: self)
         loadNamespaces()
-        showOnlyPublic = publicFilterButton.state == .on
 
         contextMenu.delegate = self
 
         outlineView.registerForDraggedTypes([NSPasteboard.PasteboardType.string])
+
+        outlineState.setFilter(filter: publicFilterButton.state == .on ? .publicSymbols : .allSymbols)
     }
 
     override func viewWillDisappear() {
@@ -70,19 +60,19 @@ class SidebarViewController: NSViewController {
         Net.getNameSpaces(site: Prefs.serverUrl)
     }
 
-    private func removeFromFaves(_ namespace: CLJNameSpace) {
+    private func removeFromFaves(_ namespace: OutlineNS) {
         outlineState.removeFromFaves(namespace)
         outlineView.reloadData()
     }
 
     private func moveToFavorites(_ namespace: String) {
-        outlineState.moveToFavorites(namespace)
+        outlineState.moveToFaves(namespace)
         outlineView.reloadData()
-        outlineView.expandItem(outlineState.favGroup)
+        outlineView.expandItem(outlineState.group(.favorites))
     }
 
     @IBAction func onSearchFieldAction(_ sender: NSSearchField) {
-        Log.warn("Search/filter not implemented.")
+        outlineState.textFilter = sender.stringValue
     }
 
     @IBAction func refreshButtonClicked(_ sender: NSButton) {
@@ -90,7 +80,8 @@ class SidebarViewController: NSViewController {
     }
 
     @IBAction func togglePublicFlag(_ sender: NSButton) {
-        showOnlyPublic = !showOnlyPublic
+        let showOnlyPublic = publicFilterButton.state == .on
+        outlineState.setFilter(filter: showOnlyPublic ? .publicSymbols : .allSymbols)
         outlineView.reloadData()
     }
 
@@ -120,8 +111,8 @@ extension SidebarViewController: MessageReceiver {
         case .namespaceData(let namespaces):
             outlineState.reloadNamespaces(namespaces)
             outlineView.reloadData()
-            outlineView.expandItem(outlineState.favGroup)
-            outlineView.expandItem(outlineState.libGroup)
+            outlineView.expandItem(outlineState.group(.favorites))
+            outlineView.expandItem(outlineState.group(.libraries))
 
         default:
             break
@@ -133,18 +124,20 @@ extension SidebarViewController: MessageReceiver {
 
 extension SidebarViewController: NSOutlineViewDataSource {
 
+    // MARK: - Basic data
+
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
 
         switch item {
 
-        case let group as NamespaceGroup:
-            return group.namespaces.count
+        case let group as OutlineGroup:
+            return outlineState.count(itemsIn: group)
 
-        case let namespace as CLJNameSpace:
-            return namespace.symbols(filter: symFilter).count
+        case let namespace as OutlineNS:
+            return outlineState.count(itemsIn: namespace)
 
         default:
-            return item == nil ? outlineState.groups.count : 0
+            return item == nil ? outlineState.numGroups : 0
         }
     }
 
@@ -152,14 +145,14 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
         switch item {
 
-        case let group as NamespaceGroup:
-            return group.namespaces[index]
+        case let group as OutlineGroup:
+            return outlineState.namespace(inGroup: group, atIndex: index)
 
-        case let namespace as CLJNameSpace:
-            return namespace.symbols(filter: symFilter)[index]
+        case let namespace as OutlineNS:
+            return outlineState.symbol(inNamespace: namespace, atIndex: index)
 
         default:
-            return outlineState.groups[index]
+            return outlineState.group(atIndex: index)
         }
     }
 
@@ -167,19 +160,21 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
         switch item {
 
-        case _ as NamespaceGroup:
+        case _ as OutlineGroup:
             return true
 
-        case let namespace as CLJNameSpace:
-            return namespace.symbols(filter: symFilter).count != 0
+        case let namespace as OutlineNS:
+            return outlineState.count(itemsIn: namespace) != 0
 
-        case _ as CLJSymbol:
+        case _ as OutlineSymbol:
             return false
 
         default:
             return false
         }
     }
+
+    // MARK:- Drag/drop
 
     /// Dropped
     func outlineView(_ outlineView: NSOutlineView, acceptDrop info: NSDraggingInfo, item: Any?, childIndex index: Int) -> Bool {
@@ -193,18 +188,18 @@ extension SidebarViewController: NSOutlineViewDataSource {
 
     /// Move dragged thing to pasteboard
     func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> NSPasteboardWriting? {
-        guard let namespace = item as? CLJNameSpace else {
+        guard let namespace = item as? OutlineNS else {
             return nil
         }
         let pbItem = NSPasteboardItem()
-        pbItem.setString(namespace.name, forType: .string)
+        pbItem.setString(namespace, forType: .string)
         return pbItem
     }
 
     /// Can be dropped on?
     func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
-        if let group = item as? NamespaceGroup,
-            group === outlineState.favGroup {
+        if let group = item as? OutlineGroup,
+            group.type == .favorites {
             return NSDragOperation.move
         }
         return []
@@ -216,7 +211,7 @@ extension SidebarViewController: NSOutlineViewDataSource {
 extension SidebarViewController: NSOutlineViewDelegate {
 
     func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
-        return item is NamespaceGroup
+        return item is OutlineGroup
     }
 
     func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
@@ -227,13 +222,14 @@ extension SidebarViewController: NSOutlineViewDelegate {
 
         switch item {
 
-        case let group as NamespaceGroup:
+        case let group as OutlineGroup:
             return makeCell(type: .header, label: group.name, image: nil)
 
-        case let namespace as CLJNameSpace:
-            return makeCell(type: .namespace, label: namespace.name, image: NSImage(named: "Namespace"))
+        case let namespace as OutlineNS:
+            return makeCell(type: .namespace, label: namespace, image: NSImage(named: "Namespace"))
 
-        case let symbol as CLJSymbol:
+        case let vsym as OutlineSymbol:
+            let symbol = vsym.symbol
             let symbolView = makeSymbolCell(label: symbol.name)
             if symbol.isPrivate {
                 setImage(inView: symbolView, to: NSImage(named: "Private"))
@@ -328,25 +324,25 @@ extension SidebarViewController: NSOutlineViewDelegate {
 extension SidebarViewController: NSMenuDelegate {
 
     @objc private func displaySourceAction() {
-        if let sym = outlineView.item(atRow: outlineView.clickedRow) as? CLJSymbol {
-            Net.getSource(from: Prefs.serverUrl, forSymbol: sym)
+        if let sym = outlineView.item(atRow: outlineView.clickedRow) as? OutlineSymbol {
+            Net.getSource(from: Prefs.serverUrl, forSymbol: sym.symbol)
         }
     }
 
     @objc private func changeNamespaceAction() {
-        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? OutlineNS {
             Notify.shared.deliver(.changeNamespaceCommand(ns))
         }
     }
 
     @objc private func favNamespaceAction() {
-        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
-            moveToFavorites(ns.name)
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? OutlineNS {
+            moveToFavorites(ns)
         }
     }
 
     @objc private func unfavNamespaceAction() {
-        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? CLJNameSpace {
+        if let ns = outlineView.item(atRow: outlineView.clickedRow) as? OutlineNS {
             removeFromFaves(ns)
         }
     }
@@ -357,9 +353,9 @@ extension SidebarViewController: NSMenuDelegate {
         let item = outlineView.item(atRow: outlineView.clickedRow)
         switch item {
 
-        case let ns as CLJNameSpace:
-            if ns.name != "user" {
-                if outlineState.isFavorited(ns.name) {
+        case let ns as OutlineNS:
+            if ns != "user" {
+                if outlineState.isFavorited(ns) {
                     menu.addItem(unfavMenuItem)
                 } else {
                     menu.addItem(favMenuItem)
@@ -367,7 +363,7 @@ extension SidebarViewController: NSMenuDelegate {
             }
             menu.addItem(changeNsMenuItem)
 
-        case _ as CLJSymbol:
+        case _ as OutlineSymbol:
             menu.addItem(sourceMenuItem)
 
         default:

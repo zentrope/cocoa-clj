@@ -14,7 +14,7 @@ enum Message {
     case namespaceData([CLJNameSpace])
     case evalData(ReplResponse)
     case errorData(Error)
-    case changeNamespaceCommand(CLJNameSpace)
+    case changeNamespaceCommand(String)
 }
 
 protocol MessageReceiver: class {
