@@ -16,7 +16,7 @@
 ;;; <http://www.gnu.org/licenses/>.
 ;;;
 
-(ns zentrope.cljapp.main
+(ns zentrope.cljapp.core
   (:require
    [clojure.data.json :as json]
    [clojure.repl :refer [source-fn]]
