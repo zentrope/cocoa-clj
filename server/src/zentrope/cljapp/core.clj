@@ -20,10 +20,11 @@
   (:require
    [clojure.data.json :as json]
    [clojure.repl :refer [source-fn]]
-   [integrant.core :as ig]
    [nrepl.server :refer [start-server stop-server]]
-   [nrepl.core :as repl]
-   [org.httpkit.server :as httpd]))
+   [nrepl.core :as repl])
+  (:import
+   (java.net InetSocketAddress)
+   (com.sun.net.httpserver HttpServer HttpHandler)))
 
 ;;; Repl Client Handlers
 
@@ -51,116 +52,78 @@
        (sort-by :name)))
 
 (defmulti ^:private repl-op
-  (fn [repl cmd]
+  (fn [cmd repl]
     (:op cmd)))
 
-(defmethod repl-op :default [_ cmd]
-  (println " - unknown op" (pr-str cmd))
+(defmethod repl-op :default [cmd _]
   {:error :unknown-op :command cmd})
 
-(defmethod repl-op "eval" [repl cmd]
+(defmethod repl-op "eval" [cmd repl]
   (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
     (doall (repl/message (:client repl) msg))))
 
-(defmethod repl-op "ns-all" [repl _]
+(defmethod repl-op "ns-all" [cmd repl]
   (->> (all-ns)
        (mapv (memfn getName))
        sort
        (mapv #(hash-map :name %))
        (mapv #(assoc % :symbols (resolve-symbols (:name %))))))
 
-(defmethod repl-op "ping" [repl _]
+(defmethod repl-op "ping" [_ repl]
   {:op :ping :data :pong})
 
-(defmethod repl-op "source" [repl cmd]
+(defmethod repl-op "source" [cmd repl]
   {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
                (format "Source for '%s' not found." (:symbol cmd)))})
 
-;;; Web Handlers
-
-(defn- body-of
-  [r]
-  (let [b (:body r)]
-    (if (string? b) b (slurp b))))
-
-(defn- tresp
-  [body]
-  {:status 200 :body body :headers {"content-type" "text/plain"}})
-
-(defn- jresp
-  [value]
-  (let [doc (json/write-str value)]
-    {:status 200
-     :headers {"content-type" "application/json"}
-     :body doc}))
-
-(defn- ping [r]
-  (tresp "OK"))
-
-(defn- repl [req repl]
-  (let [cmd (json/read-str (body-of req) :key-fn keyword)
-        _ (println " -" (pr-str cmd))
-        result (repl-op repl cmd)]
-    (jresp result)))
-
-(defn- not-found [r]
-  (tresp "Not found"))
-
-(defn- route
-  [request repl-client]
-  (println (format "%s %s" (name (:request-method request)) (:uri request)))
-  (try
-    (case (:uri request)
-      "/ping" (ping request)
-      "/repl" (repl request repl-client)
-      (not-found request))
-    (catch Throwable t
-      (println "   !" (.getMessage t))
-      {:status 500 :body (.getMessage t) :headers {"content-type" "text/plain"}})))
-
 ;;; Configuration
 
-(def ^:private config
-  {:nrepl-server {:port 61016}
-   :nrepl-client {:port 61016 :server (ig/ref :nrepl-server)}
-   :httpd {:port 60006 :repl (ig/ref :nrepl-client)}})
+(def ^:private http-port 60006)
+(def ^:private nrepl-port 61016)
 
-;;; Service management
+;;; Web server
 
-(defmethod ig/init-key :httpd
-  [_ {:keys [repl port]}]
-  (println (format "Starting httpd server on %s." port))
-  (httpd/run-server #(route % repl) {:port port :worker-name-prefix "http."}))
+(defn- handle-repl
+  [repl]
+  (reify HttpHandler
+    (handle [_ exchange]
+      (let [response (-> (.getRequestBody exchange)
+                         (slurp)
+                         (json/read-str :key-fn keyword)
+                         (repl-op repl)
+                         (json/write-str))]
+        (doto exchange
+          (.setAttribute "content-type" "application/json")
+          (.sendResponseHeaders 200 (count response)))
+        (with-open [out (.getResponseBody exchange)]
+          (.write out (.getBytes response)))))))
 
-(defmethod ig/halt-key! :httpd
-  [_ server]
-  (println "Stopping httpd server.")
-  (when server
-    (server)))
+(defn- httpd-server ^HttpServer
+  [repl]
+  (doto (HttpServer/create (InetSocketAddress. http-port) 0)
+    (.createContext "/repl" (handle-repl repl))
+    (.setExecutor nil)
+    (.start)))
 
-(defmethod ig/init-key :nrepl-server
-  [_ {:keys [port]}]
-  (println "Starting nrepl server.")
-  (start-server :port port))
+;;; Services
 
-(defmethod ig/halt-key! :nrepl-server
-  [_ server]
-  (println "Stopping nrepl server.")
-  (stop-server server))
+(defn- start-app
+  []
+  (let [server  (start-server :port nrepl-port)
+        conn    (repl/connect :port nrepl-port)
+        client  (repl/client conn 1000)
+        session (repl/new-session client)
+        repl    {:conn conn :client client :session session}
+        httpd   (httpd-server repl)]
+    {:server #(stop-server server)
+     :httpd  #(.stop httpd 0)
+     :client #(.close conn)}))
 
-(defmethod ig/init-key :nrepl-client
-  [_ {:keys [port]}]
-  (println "Starting nrepl client.")
-  (let [conn (repl/connect :port port)
-        client (repl/client conn 1000)
-        session (repl/new-session client)]
-    {:conn conn :client client :session session}))
-
-(defmethod ig/halt-key! :nrepl-client
-  [_ client]
-  (println "Stopping nrepl client.")
-  (when-let [conn (:conn client)]
-    (.close conn)))
+(defn- stop-app
+  [{:keys [httpd server client httpd]}]
+  (client)
+  (server)
+  (httpd))
 
 ;;; Bootstrap
 
@@ -171,11 +134,9 @@
 
 (defn -main
   [& args]
-  (println "Welcome to WIP")
+  (println (format "Cocoa CLJ Server, port %s." http-port))
   (let [lock (promise)
-        system (ig/init config)]
-    (hook-shutdown! #(do (println "Stopping.")
-                         (ig/halt! system)
-                         (deliver lock :release)))
+        app (start-app)]
+    (hook-shutdown! #(deliver lock :release))
     @lock
-    (println "Halt!")))
+    (stop-app app)))
