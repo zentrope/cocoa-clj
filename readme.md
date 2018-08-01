@@ -25,11 +25,7 @@ server                    Run the backend server
 If I gave you a binary of the Mac App, you could use the following in
 a terminal window to run the server side:
 
-    clojure -Sdeps '{:deps,{zentrope/cocoa-clj { \
-      :git/url "https://github.com/zentrope/cocoa-clj" \
-      :sha "2b9ec07e3763b3386e129f6b2c2e93ca1cad0f96" \
-      :deps/root "server"}}}' \
-      -m zentrope.cljapp.main
+    clojure -Sdeps '{:deps,{zentrope/cocoa-clj {:git/url "https://github.com/zentrope/cocoa-clj" :sha "2b9ec07e3763b3386e129f6b2c2e93ca1cad0f96" :deps/root "server"}}}' -m zentrope.cljapp.core
 
 without cloning the source code. Eventually, the app itself should
 have an option to do this for you if you want to run it against a
