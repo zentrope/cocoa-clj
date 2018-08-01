@@ -4,7 +4,8 @@ Challenge: build a Mac app that interacts with Clojure in some useful way.
 
 ## Usage
 
-To open the Xcode project and run the server:
+To open the Xcode project (so you can run the client) and run the
+server:
 
 ``` shellsession
 make open server
@@ -26,17 +27,20 @@ a terminal window to run the server side:
 
     clojure -Sdeps '{:deps,{zentrope/cocoa-clj { \
       :git/url "https://github.com/zentrope/cocoa-clj" \
-      :sha "affaa848ddb5afb468a75a034e40b381cd0b5af8" \
+      :sha "2b9ec07e3763b3386e129f6b2c2e93ca1cad0f96" \
       :deps/root "server"}}}' \
       -m zentrope.cljapp.main
 
-to run the server without cloning out the source code. Eventually, the
-app itself should have an option to do this for you if you want to run
-it against a non-project JVM.
+without cloning the source code. Eventually, the app itself should
+have an option to do this for you if you want to run it against a
+non-project JVM.
+
+Ideally, the client would use a socket-repl, but I'm waiting for some
+SDKs from Mojave before I work on that.
 
 ## Application
 
-- Xcode-beta 3
+- Xcode-beta 4
 - Swift 4.2
 - High Sierra
 
