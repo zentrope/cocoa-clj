@@ -26,55 +26,33 @@
    (java.net InetSocketAddress)
    (com.sun.net.httpserver HttpServer HttpHandler)))
 
-;;; Repl Client Handlers
-
 (def ^:private reasonable
   [:ns :name :dynamic :private :macro :deprecated])
 
 (def ^:private defaults
-  {:private false :macro false :dynamic false :deprecated false})
+  {:private false :macro false :dynamic false})
 
-(defn- munge-symbols
-  [symbol-map]
-  (let [m (merge defaults (select-keys symbol-map reasonable))]
-    (if (string? (:deprecated m))
-      (assoc m :deprecated true)
-      m)))
-
-(defn- resolve-symbols
-  [namespace]
-  (->> (symbol namespace)
-       ns-interns
-       vals
+(defn- all-symbols
+  []
+  (->> (all-ns)
+       (mapcat #(vals (ns-interns %)))
        (mapv meta)
+       (mapv #(select-keys % reasonable))
+       (mapv #(assoc % :deprecated (if (:deprecated %) true false)))
        (mapv #(assoc % :ns (.getName (:ns %))))
-       (mapv #(munge-symbols %))
+       (mapv #(merge defaults %))
        (sort-by :name)))
 
-(defmulti ^:private repl-op
-  (fn [cmd repl]
-    (:op cmd)))
+(defn- repl-op
+  [cmd repl]
+  (case (:op cmd)
+    "ping"    {:op :ping :data :pong}
+    "symbols" (all-symbols)
+    "eval"    (repl/message (:client repl) {:op :eval :code (:expr cmd) :session (:session repl)})
+    "source"  {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
+                           (format "Source for '%s' not found." (:symbol cmd)))}
+    {:error :unknown-op :command cmd}))
 
-(defmethod repl-op :default [cmd _]
-  {:error :unknown-op :command cmd})
-
-(defmethod repl-op "eval" [cmd repl]
-  (let [msg {:op :eval :code (:expr cmd) :session (:session repl)}]
-    (doall (repl/message (:client repl) msg))))
-
-(defmethod repl-op "ns-all" [cmd repl]
-  (->> (all-ns)
-       (mapv (memfn getName))
-       sort
-       (mapv #(hash-map :name %))
-       (mapv #(assoc % :symbols (resolve-symbols (:name %))))))
-
-(defmethod repl-op "ping" [_ repl]
-  {:op :ping :data :pong})
-
-(defmethod repl-op "source" [cmd repl]
-  {:source (or (clojure.repl/source-fn (symbol (:symbol cmd)))
-               (format "Source for '%s' not found." (:symbol cmd)))})
 
 ;;; Configuration
 

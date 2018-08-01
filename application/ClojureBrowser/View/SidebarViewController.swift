@@ -43,7 +43,7 @@ class SidebarViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Notify.shared.register(receiver: self)
-        loadNamespaces()
+        loadSymbols()
 
         contextMenu.delegate = self
 
@@ -56,8 +56,8 @@ class SidebarViewController: NSViewController {
         Notify.shared.unregister(receiver: self)
     }
 
-    private func loadNamespaces() {
-        Net.getNameSpaces(site: Prefs.serverUrl)
+    private func loadSymbols() {
+        Net.getSymbols(site: Prefs.serverUrl)
     }
 
     private func removeFromFaves(_ namespace: OutlineNS) {
@@ -91,7 +91,7 @@ class SidebarViewController: NSViewController {
     }
 
     @IBAction func refreshButtonClicked(_ sender: NSButton) {
-        loadNamespaces()
+        loadSymbols()
     }
 
     @IBAction func togglePublicFlag(_ sender: NSButton) {
@@ -123,8 +123,8 @@ extension SidebarViewController: MessageReceiver {
 
     func receive(message: Message) {
         switch message {
-        case .namespaceData(let namespaces):
-            outlineState.reloadNamespaces(namespaces)
+        case .symbolData(let symbols):
+            outlineState.reload(symbols)
             outlineView.reloadData()
             outlineView.expandItem(outlineState.group(.favorites))
             outlineView.expandItem(outlineState.group(.libraries))

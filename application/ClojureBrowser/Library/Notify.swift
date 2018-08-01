@@ -11,7 +11,7 @@ import Cocoa
 
 enum Message {
     case sourceData(CLJSource, CLJSymbol)
-    case namespaceData([CLJNameSpace])
+    case symbolData([CLJSymbol])
     case evalData(ReplResponse)
     case errorData(Error)
     case changeNamespaceCommand(String)

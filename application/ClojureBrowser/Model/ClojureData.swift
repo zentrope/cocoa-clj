@@ -10,19 +10,21 @@ import Foundation
 
 struct ClojureData {
 
-    static func decodeNameSpaces(jsonString: String) -> [CLJNameSpace] {
+    // TODO: Throw errors with the messsage so we can display it somewhere?
+
+    static func decodeSymbols(jsonString: String) -> [CLJSymbol] {
         let jsonData = jsonString.data(using: .utf8)!
         let decoder = JSONDecoder()
 
         do {
-            let namespaces = try decoder.decode([CLJNameSpace].self, from: jsonData)
-            return namespaces
+            let symbols = try decoder.decode([CLJSymbol].self, from: jsonData)
+            return symbols
         }
 
         catch let error {
             Log.error("data \(jsonString)")
             Log.error(error.localizedDescription)
-            return [CLJNameSpace]()
+            return [CLJSymbol]()
         }
     }
 
@@ -44,11 +46,6 @@ struct ClojureData {
 
 struct CLJSource : Codable {
     var source: String
-}
-
-struct CLJNameSpace : Codable {
-    var name: String
-    var symbols: [CLJSymbol]
 }
 
 struct CLJSymbol : Codable {

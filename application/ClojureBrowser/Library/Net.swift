@@ -31,13 +31,13 @@ struct Net {
         }
     }
 
-    static func getNameSpaces(site: String) {
-        invokeRequest(to: site, withBody: ReplRequest.getNamespaces()) { error, text in
+    static func getSymbols(site: String) {
+        invokeRequest(to: site, withBody: ReplRequest.getSymbols()) { error, text in
             if let e = error { Notify.shared.deliver(.errorData(e)); return }
 
             if let t = text {
-                let nss = ClojureData.decodeNameSpaces(jsonString: t)
-                Notify.shared.deliver(.namespaceData(nss))
+                let syms = ClojureData.decodeSymbols(jsonString: t)
+                Notify.shared.deliver(.symbolData(syms))
             }
         }
     }

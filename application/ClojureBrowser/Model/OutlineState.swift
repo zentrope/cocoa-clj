@@ -95,21 +95,19 @@ class OutlineState {
 
     // MARK:- Mutating
 
-    func reloadNamespaces(_ namespaces: [CLJNameSpace]) {
+    func reload(_ symbols: [CLJSymbol]) {
         cache.reset()
         var syms = [OutlineSymbol]()
-        namespaces.forEach { ns in
-            let group: GroupType = isFavorited(ns.name) ? .favorites :
-                ns.name == "user" ? .favorites :
-                ns.name.hasPrefix("clojure.") ? .clojure :
+        symbols.forEach { sym in
+            let group: GroupType = isFavorited(sym.ns) ? .favorites :
+                sym.ns == "user" ? .favorites :
+                sym.ns.hasPrefix("clojure.") ? .clojure :
                 .libraries
-            ns.symbols.forEach { sym in
-                syms.append(OutlineSymbol(aSymbol: sym, inGroup: group))
-            }
+            syms.append(OutlineSymbol(aSymbol: sym, inGroup: group))
         }
 
         syms.sort(by: { $0.symbol.name < $1.symbol.name })
-        symbols = syms
+        self.symbols = syms
     }
 
     func setFilter(filter: SymbolFilter) {
