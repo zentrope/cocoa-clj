@@ -21,10 +21,10 @@
 
 clojure = $(shell which clojure)
 
-run:
+run: ## Run a REPL
 	@$(clojure) -A:run || true
 
-outdated:
+outdated: ## Check for outdated dependencies
 	@$(clojure) -A:outdated
 
 help: ## Show makefile based help
